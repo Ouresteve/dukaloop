@@ -211,7 +211,7 @@
   <div id="invoice-list" class="space-y-4"></div>
 </div>
 <!-- ==================== CREATE INVOICE MODAL (POS style) ==================== -->
-<<div id="create-invoice-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+<div id="create-invoice-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
     <!-- Header -->
     <div class="bg-[#10b981] text-white p-6 flex justify-between items-center">
@@ -595,12 +595,13 @@ async function generateShareLink() {
 function productEventMonitor(){
   // Reference your input fields
       const productInput = document.getElementById('variant-name');   
-      const productId =document.getElementById('variant-product-id').value;
-      const priceInput = document.getElementById('variant-selling-price');
 
+      
+      const priceInput = document.getElementById('variant-selling-price');
+      
       productInput.addEventListener('input', async () => {
             const selectedValue = productInput.value;
-
+            const productId =document.getElementById('variant-product-id').value;
   // 1. If the user clears the selection
             if (selectedValue === "") {
                   priceInput.value = "";
@@ -617,10 +618,12 @@ function productEventMonitor(){
 
             if (productData) {
     // Found a match: Autofill and Lock
+              
                 priceInput.value = productData.sellingPrice;
                 priceInput.disabled = true; 
             } else {
     // No match: User might be typing a new product
+               
               priceInput.disabled = false;
              }
   });

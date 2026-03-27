@@ -612,6 +612,7 @@ function productEventMonitor(){
   // Using the priceReturner function we discussed earlier
             const productData = await db.productVariants
                   .where('name').equalsIgnoreCase(selectedValue)
+                  .and(variant => variant.productId === productId)
                   .first();
 
             if (productData) {

@@ -212,7 +212,7 @@
 </div>
 <!-- ==================== CREATE INVOICE MODAL (POS style) ==================== -->
 <div id="create-invoice-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+  <div style="z-index: 1000; overflow-y: auto; height:100vh; min-height: 0; flex: 1;padding-bottom: 70px; margin-top: 60px;"class="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
     <!-- Header -->
     <div class="bg-[#10b981] text-white p-6 flex justify-between items-center">
       <h2 class="text-2xl font-bold">New Invoice #<span id="invoice-number">001</span></h2>
@@ -221,12 +221,13 @@
 
     <!-- Customer -->
     <div class="px-6 py-4 border-b flex items-center gap-4 bg-gray-50">
+      <button onclick="quickAddCustomer()" class="text-[#10b981] text-sm font-medium">+ New</button>
       <label class="font-medium">Customer:</label>
       <select id="invoice-customer" class="flex-1 px-4 py-3 rounded-2xl border border-gray-300 focus:border-[#10b981]">
         <option value="">Cash Sale / Walk-in</option>
         <!-- populated by JS -->
       </select>
-      <button onclick="quickAddCustomer()" class="text-[#10b981] text-sm font-medium">+ New</button>
+      
     </div>
 
     <!-- Search + Add Items -->

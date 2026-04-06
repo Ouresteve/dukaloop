@@ -14,7 +14,28 @@
   <style>
     /*:root { --primary: #10b981; }*/
     :root {--primary:#10b981;}
-    
+    #toast-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color:#ee5252;
+  color: white;
+  width:70%;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: sans-serif;
+  z-index: 1000;
+  transition: opacity 0.3s, top 0.3s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toast-hidden {
+  opacity: 0;
+  top: -50px !important; /* Slide it off screen when hidden */
+  pointer-events: none;
+}
+
     .primary { background-color: var(--primary); }
     .loader { animation: spin 1s linear infinite;   }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -28,6 +49,9 @@
     <div class="w-8 h-8 border-4 border-green-200 border-t-[#10b981] rounded-full loader"></div>
     <p class="mt-4 text-gray-500">Inaload duka yako...</p>
   </div>
+
+  <div id="toast-notification" class="toast-hidden"></div>
+
 
 <!-- FLOATING SHOP NAME MODAL (shows only first time) -->
 <div id="shop-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -134,19 +158,20 @@
           <input id="variant-selling-price" type="number" placeholder="50" 
                  class="w-full px-5 py-4 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-600 mb-2">Total wholesale Buying Price (KSh)</label>
-          <input id="variant-cost-price" type="number" placeholder="30" 
+         <div>
+          <label class="block text-sm font-medium text-gray-600 mb-2">Stock Quantity (ume restock ngapi)</label>
+          <input id="variant-stock" type="number" placeholder="120" value="0"  oninput="returner101()"
                  class="w-full px-5 py-4 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-600 mb-2">Stock Quantity (ume restock ngapi)</label>
-          <input id="variant-stock" type="number" placeholder="120" value="0"
+          <label id="label101"  class="block text-sm font-medium text-gray-600 mb-2">Total wholesale Buying Price (KSh)</label>
+          <input id="variant-cost-price" type="number" placeholder="30" 
                  class="w-full px-5 py-4 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
         </div>
+       
         <div>
           <label class="block text-sm font-medium text-gray-600 mb-2">Expiry Date</label>
           <input id="variant-expiry" type="date" 
@@ -164,6 +189,110 @@
   </div>
 
   </div>
+  <!-- ==================== MANAGE VARIANTS MODAL (Delete-first design) ==================== -->
+<div id="manage-variants-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col" style="max-height: 90vh;">
+    
+    <!-- Header -->
+    <div class="bg-[#10b981] text-white p-6 text-center">
+      <i class="fas fa-tags text-4xl mb-3"></i>
+      <h2 id="manage-product-name" class="text-2xl font-bold"></h2>
+      <p class="text-green-100 text-sm">Manage variants • Delete first</p>
+    </div>
+
+    <!-- Variants List -->
+    <div class="flex-1 p-6 overflow-auto" id="variants-list-container">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="p-6 border-t space-y-3">
+      
+      <button onclick="confirmDeleteEntireProduct()" 
+              class="bg-red-600 w-full py-2 rounded-2xl text-white font-bold text-lg flex items-center justify-center gap-2">
+        <i class="fas fa-trash"></i> DELETE ENTIRE PRODUCT
+      </button>
+      
+      <button onclick="closeManageVariantsModal()" 
+              class="w-full py-2 text-gray-500 font-medium">Close</button>
+    </div>
+  </div>
+</div>
+<!-- ==================== EDIT PRODUCT / VARIANT MODAL (FIXED) ==================== -->
+<div id="edit-product-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col" style="max-height: 90vh;">
+    
+    <!-- Header -->
+    <div class="bg-[#10b981] text-white p-6 text-center">
+      <i class="fas fa-edit text-4xl mb-3"></i>
+      <h2 id="edit-modal-title" class="text-2xl font-bold">Edit Product & Variant</h2>
+      <p class="text-green-100 text-sm">Choose variant → edit price & details. NB:Here you only edit what already exists.</p>
+    </div>
+
+    <div class="flex-1 p-8 space-y-6 overflow-auto">
+      
+      <!-- Product Name -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-2">Product Name</label>
+        <input id="edit-product-name" type="text" 
+               class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981] focus:outline-none">
+      </div>
+
+      <!-- Select Variant -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-2">Select Variant to Edit</label>
+        <select id="edit-variant-select" onchange="loadVariantForEdit()" 
+                class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
+        </select>
+      </div>
+
+      <!-- Variant Fields (now guaranteed to show) -->
+      <div id="edit-variant-fields" class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-2">Variant Name</label>
+          <input id="edit-variant-name" type="text" 
+                 class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">Selling Price per product (KSh)</label>
+            <input id="edit-variant-selling-price" type="number" 
+                   class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">Total wholesale Buying Price (KSh)</label>
+            <input id="edit-variant-cost-price" type="number" 
+                   class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">Stock Quantity (ume restock ngapi)</label>
+            <input id="edit-variant-stock" type="number" 
+                   class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">Expiry Date</label>
+            <input id="edit-variant-expiry" type="date" 
+                   class="w-full px-5 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-6 border-t space-y-3">
+      <button onclick="saveEditedProductAndVariant()" 
+              class="bg-[#10b981] w-full py-2 rounded-2xl text-white font-bold text-lg flex items-center justify-center gap-2">
+        <i class="fas fa-save"></i> SAVE CHANGES
+      </button>
+      <button onclick="closeEditProductModal()" 
+              class="w-full py-2 text-gray-500 font-medium">Cancel</button>
+    </div>
+  </div>
+</div>
 <!-- ==================== ADD NEW PRODUCT MODAL ==================== -->
 <div id="product-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
@@ -202,7 +331,7 @@
       <i class="fas fa-receipt"></i> Sales & Invoices
     </h2>
     <button onclick="showCreateInvoiceModal()" 
-            class="primary px-8 py-4 rounded-2xl text-white font-bold flex items-center gap-2 text-lg">
+            class="primary px-8 py-2 rounded-2xl text-white font-bold flex items-center gap-2 text-lg">
       <i class="fas fa-plus"></i> NEW INVOICE
     </button>
   </div>
@@ -236,8 +365,9 @@
         <i class="fas fa-search absolute left-5 top-4 text-gray-400"></i>
         <input id="item-search" 
                onkeyup="if(event.key==='Enter') searchAndAddItem()"
-               placeholder="Search product or variant e.g. Coca Cola 500ml"
-               class="w-full pl-12 pr-6 py-4 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981] focus:outline-none">
+               oninput="searchAndAddItem()"
+               placeholder="Search product or variant e.g. Ndhiwa sugar 1kg"
+               class="w-full pl-12 pr-6 py-2 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981] focus:outline-none">
       </div>
       
       <!-- Search Results -->
@@ -255,9 +385,18 @@
       <div class="flex justify-between text-xl font-bold">
         <span>Total</span>
         <span id="cart-total" class="text-[#10b981]">KSh 0</span>
+        
       </div>
+      <div  class="flex justify-between text-xl">
+        <label class="block text-sm font-medium text-gray-600 mb-2">Enter Amount Submitted (To claculate balance)</label>
+       <input   id="balanceCalculate" oninput="calculateBalance()" class="w-full px-5 py-1 text-lg border border-gray-300 rounded-2xl focus:border-[#10b981]" placeholder="1000" >
+         
+      </div>
+    <div class="flex justify-between text-xl font-bold">
+          <label id="signaller" class="block text-sm font-bold text-gray-600 mb-2">Return ksh 0</label>
+    </div>
       <button onclick="showPaymentModal()" 
-              class="mt-6 primary w-full py-6 rounded-3xl text-white text-2xl font-bold flex items-center justify-center gap-3">
+              class="mt-6 primary w-full py-2 rounded-3xl text-white text-2xl font-bold flex items-center justify-center gap-3">
         <i class="fas fa-money-bill-wave"></i> SAVE & PAY
       </button>
     </div>
@@ -298,7 +437,7 @@
       <div class="flex justify-around py-2">
         <button onclick="switchPage('home')" id="homeBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-home text-2xl"></i><span class="text-xs">Home</span></button>
         <button onclick="switchPage('products')" id="productsBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-box text-2xl"></i><span class="text-xs">Products</span></button>
-        <button onclick="switchPage('invoices')" id="invoicesBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-receipt text-2xl"></i><span class="text-xs">Invoices</span></button>
+        <button onclick="switchPage('invoices')" id="invoicesBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-receipt text-2xl"></i><span class="text-xs">Sales</span></button>
         <button onclick="switchPage('share')" id="shareBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-share-alt text-2xl"></i><span class="text-xs">Share</span></button>
       </div>
     </nav>
@@ -425,13 +564,17 @@ function switchPage(page) {
       const container = document.getElementById('product-list');
       container.innerHTML = products.map(p => `
         <div class="bg-white rounded-2xl overflow-hidden shadow">
+          <div class="flex justify-between">
+          <button onclick="editProduct('${p.id}')" class="mt-3   py-2  text-black text-sm font-medium"><i class="fas fa-edit"></i></button>
+          <button onclick="showManageVariants('${p.id}')" class="mt-3  py-2  text-black text-sm font-medium"><i class="fas fa-trash"></i></button>
+          </div>
           ${p.photo ? `<img src="${p.photo}" class="w-full h-40 object-cover">` : `<div class="w-full h-40 bg-gray-100 flex items-center justify-center"><i class="fas fa-box text-6xl text-gray-300"></i></div>`}
           <div class="p-4">
             <h3 class="font-bold">${p.name}</h3>
             <p class="text-[#10b981] font-bold">Invested KSh ${p.totalCost}</p>
-            <p class="text-blue-500 font-bold">Expected Return(capital + Profit): KSh ${p.expectedReturn}</p>
+            <p class="text-blue-500 font-bold">Expected Profit(Profit only): KSh ${p.expectedReturn}</p>
             <p class="text-sm text-gray-500">In Stock: ${p.stock}</p>
-            <button onclick="showAddVariantModal('${p.name}','${p.id}')" class="mt-3 bg-[#10b981] w-full py-2 rounded-2xl text-white text-sm font-medium">Add Variant</button>
+            <button onclick="showAddVariantModal('${p.name}','${p.id}')" class="mt-3 bg-[#10b981] w-full py-2 rounded-2xl text-white text-sm font-medium">Restock</button>
           </div>
         </div>
       `).join('');
@@ -463,12 +606,101 @@ async function saveNewProduct() {
   await db.products.add({ id,name, createdAt,stock,totalCost,expectedReturn });
 
   alert(`✅ Product "${name}" added!`);
-  loadProducts()
+  await loadProducts();
   closeProductModal();
   // Reload your product list here if you have one
   // loadProducts(); // ← call your existing function
 }
+let currentEditingProductId = null;
+let currentEditingVariantId = null;
 
+// ==================== MAIN FUNCTION ====================
+async function editProduct(productId) {
+  currentEditingProductId = productId;
+  currentEditingVariantId = null;
+
+  const product = await db.products.get(productId);
+  if (!product) return alert("Product not found!");
+
+  document.getElementById('edit-product-name').value = product.name;
+  document.getElementById('edit-product-name').disabled = true;
+
+  // Load variants
+  const variants = await db.productVariants
+    .where('productId')
+    .equals(productId)
+    .toArray();
+
+  const select = document.getElementById('edit-variant-select');
+  select.innerHTML = `<option value="">-- Choose variant to edit --</option>` +
+    variants.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+
+  // Show modal
+  document.getElementById('edit-product-modal').classList.remove('hidden');
+  
+  // Auto-select first variant so fields appear immediately
+  if (variants.length > 0) {
+    select.value = variants[0].id;
+    await loadVariantForEdit();
+  }
+}
+
+async function loadVariantForEdit() {
+  const variantId = document.getElementById('edit-variant-select').value;
+  if (!variantId) return;
+
+  currentEditingVariantId = variantId;
+  
+  const variant = await db.productVariants.get(variantId);
+
+  document.getElementById('edit-variant-name').value = variant.name;
+  document.getElementById('edit-variant-name').disabled = true;
+  document.getElementById('edit-variant-selling-price').value = variant.sellingPrice || 0;
+  document.getElementById('edit-variant-cost-price').value = variant.costPrice || 0;
+  document.getElementById('edit-variant-stock').value = variant.stockQuantity || 0;
+  document.getElementById('edit-variant-expiry').value = variant.expiryDate;
+}
+
+async function saveEditedProductAndVariant() {
+  if (!currentEditingProductId) return;
+  //alert(`Current ProductID: ${currentEditingProductId}`);
+  // Update product name
+  const newName = document.getElementById('edit-product-name').value.trim();
+  if (newName) {
+    await db.products.update(currentEditingProductId, { name: newName });
+  }
+  
+
+  // Update variant
+  if (currentEditingVariantId) {
+    await db.productVariants.update(currentEditingVariantId, {
+      name: document.getElementById('edit-variant-name').value.trim(),
+      sellingPrice: parseFloat(document.getElementById('edit-variant-selling-price').value) || 0,
+      costPrice: parseFloat(document.getElementById('edit-variant-cost-price').value) || 0,
+      stockQuantity: parseInt(document.getElementById('edit-variant-stock').value) || 0,
+      expiryDate: document.getElementById('edit-variant-expiry').value || null
+    });
+  }else{
+    alert("No changes: err");
+    return
+  }
+
+  await db.productVariants
+  .where({ name: document.getElementById('edit-variant-name').value.trim(), productId: currentEditingProductId})
+  .modify({ sellingPrice: parseFloat(document.getElementById('edit-variant-selling-price').value) });
+
+  await refreshProductTotals(currentEditingProductId);
+  await loadProducts();
+  closeEditProductModal();
+  alert("✅ Changes saved!");
+  if (typeof loadProducts === 'function') loadProducts();   // refresh list
+}
+
+function closeEditProductModal() {
+  document.getElementById('edit-product-modal').classList.add('hidden');
+  currentEditingProductId = null;
+  currentEditingVariantId = null;
+}
 function closeProductModal() {
   document.getElementById('product-modal').classList.add('hidden');
   document.getElementById('product-name').value = '';
@@ -532,9 +764,129 @@ async function saveNewVariant() {
 
    // 
 }
+function cleanCurrency(value) {
+    if (!value) {
+      //showNotification("You entered nothing");
+      return;
+    }
+    return parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+}
+//calculate balance during sales
+async function calculateBalance() {
+      const amountReq=cleanCurrency(document.getElementById('cart-total').textContent);
+      const amountRec=cleanCurrency(document.getElementById('balanceCalculate').value);
+      let balance = amountRec-amountReq;
+      if (balance<0){
+        let debt = Math.abs(balance);
+        document.getElementById('signaller').textContent=`Client to add  ksh ${debt}`;
+        return;
+      } else if(balance>=0){
+        document.getElementById('signaller').textContent=`Return ksh ${balance} to Client`;
+        return;
+      }     
+      document.getElementById('signaller').textContent=`Enter in the above field to determine how much is owed and by who`;
+}
+
+// ==================== SHOW MANAGE VARIANTS MODAL ====================
+let currentProductId = null;
+
+async function showManageVariants(productId) {
+  
+  currentProductId = productId;
+  
+  const product = await db.products.get(productId);
+  if (!product) return alert("Product not found");
+  
+  document.getElementById('manage-product-name').textContent = product.name;
+  document.getElementById('manage-variants-modal').classList.remove('hidden');
+  
+  await loadVariantsList();
+}
+
+async function loadVariantsList() {
+  const variants = await db.productVariants
+    .where('productId')
+    .equals(currentProductId)
+    .toArray();
+  
+  const container = document.getElementById('variants-list-container');
+  
+  if (variants.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-12 text-gray-400">
+        <i class="fas fa-tags text-6xl mb-4"></i>
+        <p>No variants yet.<br>Tap + Add New Variant below.</p>
+      </div>`;
+    return;
+  }
+  
+  container.innerHTML = variants.map(v => `
+    <div class="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+      <div>
+        <div class="font-semibold">${v.name}</div>
+        <div class="text-sm text-[#10b981]">KSh ${v.sellingPrice} • Stock: ${v.stockQuantity}</div>
+        ${v.expiryDate ? `<div class="text-xs text-orange-600">Expires: ${v.expiryDate}</div>` : ''}
+      </div>
+      <button onclick="confirmDeleteVariant('${v.id}', '${v.productId}')" 
+              class="text-red-600 hover:text-red-700 text-2xl px-3 py-2">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+// ==================== DELETE SINGLE VARIANT ====================
+async function confirmDeleteVariant(variantId, productId) {
+  if (!confirm("🗑️ Delete this variant permanently?\nThis cannot be undone.")) return;
+  
+  await db.productVariants.delete(variantId);
+  await refreshProductTotals(productId);
+  await loadVariantsList();    
+  await loadProducts();       // refresh the list
+  alert("✅ Variant deleted");
+}
+
+// ==================== DELETE ENTIRE PRODUCT + ALL VARIANTS ====================
+async function confirmDeleteEntireProduct() {
+  const product = await db.products.get(currentProductId);
+  if (!product) return;
+  
+  const message = `⚠️ DANGER!\n\nDelete "${product.name}" completely?\n\nThis will delete:\n• The product\n• ALL its variants\n• All related sales data will stay but links will break.\n\nType "DELETE" to confirm:`;
+  
+  const confirmText = prompt(message);
+  if (confirmText !== "DELETE") return alert("Deletion cancelled.");
+  
+  // Delete all variants first
+  await db.productVariants.where('productId').equals(currentProductId).delete();
+  
+  // Delete the product
+  await db.products.delete(currentProductId);
+  
+  closeManageVariantsModal();
+  alert(`✅ Product "${product.name}" and all variants deleted!`);
+  
+  // Refresh your main product list (call your existing loadProducts() here)
+  if (typeof loadProducts === 'function') loadProducts();
+}
+
+// ==================== CLOSE MODAL ====================
+function closeManageVariantsModal() {
+  document.getElementById('manage-variants-modal').classList.add('hidden');
+  currentProductId = null;
+}
+
+// ==================== ADD VARIANT FROM WITHIN MANAGE MODAL ====================
+function showAddVariantFromManage() {
+  // Pre-fill the hidden product ID in your existing variant modal
+  document.getElementById('variant-product-id').value = currentProductId;
+  
+  closeManageVariantsModal();           // close manage modal
+  showAddVariantModal();                // open your existing add-variant modal
+}
 
 async function refreshProductTotals(productId) {
   // 1. Fetch all variants belonging to this product
+  //alert(`Product ID running: ${productId}`);
   const variants = await db.productVariants
     .where('productId')
     .equals(productId)
@@ -544,6 +896,7 @@ async function refreshProductTotals(productId) {
   let totalStock = 0;
   let totalCost = 0;
   let totalExpectedReturn = 0;
+  let profit =0;
 
   // 3. Loop through variants to sum up the values
   variants.forEach(variant => {
@@ -555,15 +908,18 @@ async function refreshProductTotals(productId) {
     const sell = Number(variant.sellingPrice) || 0;
 
     totalStock += stock;
-    totalCost += cost
+    totalCost += cost;
     totalExpectedReturn += (sell * stock);
+    
+    
   });
+  profit=totalExpectedReturn-totalCost;
 
   // 4. Update the main product table
   await db.products.update(productId, {
     stock: totalStock,
     totalCost: totalCost,
-    expectedReturn: totalExpectedReturn
+    expectedReturn: profit
   });
 
   console.log(`Product ${productId} updated successfully.`);
@@ -682,8 +1038,11 @@ function renderProducts(list) {
   list.forEach(p => {
     grid.innerHTML += `
      <div class="bg-white rounded-2xl overflow-hidden shadow">
+          
+          
           ${p.photo ? `<img src="${p.photo}" class="w-full h-40 object-cover">` : `<div class="w-full h-40 bg-gray-100 flex items-center justify-center"><i class="fas fa-box text-6xl text-gray-300"></i></div>`}
           <div class="p-4">
+
             <h3 class="font-bold">${p.name}</h3>
             <p class="text-[#10b981] font-bold">Invested KSh ${p.totalCost}</p>
             <p class="text-blue-500 font-bold">Expected Return(capital + Profit): KSh ${p.expectedReturn}</p>
@@ -740,6 +1099,20 @@ function closeCreateInvoiceModal() {
   document.getElementById('create-invoice-modal').classList.add('hidden');
   currentCart = [];
 }
+function showNotification(message) {
+  const toast = document.getElementById('toast-notification');
+  
+  // Set the text
+  toast.textContent = message;
+  
+  // Show it
+  toast.classList.remove('toast-hidden');
+  
+  // Hide it after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('toast-hidden');
+  }, 3000);
+}
 
 // Search & show results (products + variants)
 async function searchAndAddItem() {
@@ -756,20 +1129,82 @@ async function searchAndAddItem() {
   });
 
   const container = document.getElementById('search-results');
-  container.innerHTML = filtered.length === 0 
-    ? `<div class="col-span-2 text-center py-8 text-gray-400">No matching items</div>`
-    : filtered.map(v => `
-      <div onclick="addToCart('${v.id}')" class="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-[#10b981]">
-        <div class="font-medium">${productMap[v.productId]} — ${v.name}</div>
-        <div class="flex justify-between text-[#10b981] font-bold">KSh ${v.sellingPrice} <span class="text-xs text-gray-400">Stock: ${v.stockQuantity}</span></div>
-      </div>
-    `).join('');
+
+container.innerHTML = filtered.length === 0 
+  ? `<div class="col-span-2 text-center py-8 text-gray-400">No matching items</div>`
+  : filtered.map(v => {
+      
+      // Skip if no stock
+      if (v.stockQuantity <= 0) {
+        return `<div class="col-span-2 text-center py-8 text-gray-400">No matching items in stock</div>`;
+      }
+
+      // Call our helper function to get clean formatted HTML
+      const displayHTML = formatBatchDisplay(v, productMap);
+
+      return `
+          ${displayHTML}
+        
+      `;
+    }).join('');
 }
 
+
+// Helper function - put this in your sales page script
+function formatBatchDisplay(batch,productMap) {
+  const name = batch.name || "Unnamed Product";
+  const price = batch.price || 0;
+  const stock = batch.stock || 0;
+
+  // Format restocked date
+  let restockedText = "Unknown date";
+  if (batch.createdAt) {
+    const restocked = new Date(batch.createdAt);
+    const day = restocked.getDate();
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const month = monthNames[restocked.getMonth()];
+    const formattedDate = `${day} ${month}`;
+
+    // Calculate days ago
+    const now = new Date();
+    const diffTime = Math.abs(now - restocked);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const daysAgo = diffDays === 0 ? "today" : `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+
+    restockedText = `${formattedDate} (${daysAgo})`;
+  }
+
+  // Format expiry date
+  let expiryText = "No expiry";
+  if (batch.expiryDate) {
+    const expiry = new Date(batch.expiryDate);
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const month = monthNames[expiry.getMonth()];
+    const year = expiry.getFullYear();
+    expiryText = `${month} ${year}`;
+  }
+
+  // Final clean HTML
+  return `
+    <div onclick="addToCart('${batch.id}')" class="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-[#10b981]">
+        <div class="font-medium">${productMap[batch.productId]} — ${batch.name}</div>
+        <div class="flex justify-between text-[#10b981] font-bold">KSh ${batch.sellingPrice} <span class="text-xs text-gray-400"> ${batch.stockQuantity} left</span></div>
+        <div class="text-sm text-gray-500">Restocked Date: ${restockedText}</div>
+        <div class="text-sm text-gray-500">${batch.expiryDate ? `Expires: ${expiryText}` : 'No expiry'}</div>
+        <div class="text-xs text-gray-500">Tap to add to cart</div>
+      </div>
+  `;
+}
 // Add to cart
 async function addToCart(variantId) {
   const variant = await db.productVariants.get(variantId);
   const product = await db.products.get(variant.productId);
+  const alreadyInCart = currentCart.some(item => item.variantId === variantId);
+  if (alreadyInCart){
+    actualName= currentCart.find(item=> item.variantId === variantId );
+    showNotification(`${actualName.name}  already in Cart, select a different batch`);
+    return;
+  }
   
   currentCart.push({
     variantId: variant.id,
@@ -782,7 +1217,9 @@ async function addToCart(variantId) {
   
   document.getElementById('item-search').value = '';
   document.getElementById('search-results').innerHTML = '';
+  await calculateBalance();
   updateCartDisplay();
+  
 }
 
 // Update cart UI + total
@@ -795,9 +1232,9 @@ function updateCartDisplay() {
         <div class="text-[#10b981]">KSh ${item.price} × ${item.quantity}</div>
       </div>
       <div class="flex items-center gap-3">
-        <button onclick="changeQty(${index}, -1,'${item.productId}','${item.variantName}')" class="w-8 h-8 rounded-xl border flex items-center justify-center">-</button>
+        <button onclick="changeQty(${index}, -1,'${item.variantId}','${item.variantName}')" class="w-8 h-8 rounded-xl border flex items-center justify-center">-</button>
         <span class="font-mono w-8 text-center">${item.quantity}</span>
-        <button onclick="changeQty(${index}, 1,'${item.productId}','${item.variantName}')" class="w-8 h-8 rounded-xl border flex items-center justify-center">+</button>
+        <button onclick="changeQty(${index}, 1,'${item.variantId}','${item.variantName}')" class="w-8 h-8 rounded-xl border flex items-center justify-center">+</button>
         <button onclick="removeFromCart(${index})" class="ml-4 text-red-500"><i class="fas fa-trash"></i></button>
       </div>
     </div>
@@ -807,21 +1244,26 @@ function updateCartDisplay() {
   document.getElementById('cart-total').textContent = `KSh ${total}`;
 }
 
-// Quantity change
+async function  returner101() {
+     const labelTochange=document.getElementById('label101');
+     const inputToreadFrom= document.getElementById('variant-stock').value;
+     labelTochange.textContent=``;
+     labelTochange.textContent=`Total wholesale Buying Price  of the ${inputToreadFrom}`;
+     
+  
+}// Quantity change
 async function changeQty(index, delta,id,name) {
  const totalStock = await db.productVariants
-  .where('productId')
+  .where('id')
   .equals(id)
-  .filter(variant => variant.name === name) // .filter is more explicit than .and
-  .toArray()
-  .then(variants => 
-    variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0)
-  );
-  if (currentCart[index].quantity + delta > totalStock) {
-    alert("Hakuna stock ya kutosha!");
+  .first();
+
+  if (currentCart[index].quantity + delta > totalStock.stockQuantity) {
+    showNotification("Hakuna stock ya kutosha!, search the product and select a different batch!");
     return;
   }
   currentCart[index].quantity = Math.max(1, currentCart[index].quantity + delta);
+  await calculateBalance()
   updateCartDisplay();
 }
 

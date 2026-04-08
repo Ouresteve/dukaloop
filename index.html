@@ -35,6 +35,83 @@
   top: -50px !important; /* Slide it off screen when hidden */
   pointer-events: none;
 }
+.success-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px); /* The "Glass" effect */
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;
+}
+
+.success-card {
+  background: white;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  text-align: center;
+  transform: scale(0.8);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy feel */
+}
+
+.animate-in .success-card {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.checkmark-circle {
+  width: 80px; height: 80px;
+  border: 4px solid #4CAF50;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex; justify-content: center; align-items: center;
+  /* Add a drawing animation here for the "Tick" */
+}
+
+#success-label {
+  font-family: sans-serif;
+  font-weight: 600;
+  color: #333;
+  margin-top: 10px;
+}
+  .checkmark-svg {
+  width: 80px; height: 80px;
+  display: block; margin: 0 auto 20px;
+}
+
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke: #4CAF50;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke-width: 3;
+  stroke: #4CAF50;
+  /* Delay the tick slightly so the circle finishes first */
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+}
+
+@keyframes stroke {
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Add a little pop animation for the whole card too */
+.animate-in .success-card {
+  animation: pop 0.4s ease-out forwards;
+}
+
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 
     .primary { background-color: var(--primary); }
     .loader { animation: spin 1s linear infinite;   }
@@ -47,11 +124,21 @@
   <div id="loader" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
     <img src="images/logo.png" alt="DukaLoop" class="w-32 h-32 mb-6 border-4 border-[#10b981] rounded-full">
     <div class="w-8 h-8 border-4 border-green-200 border-t-[#10b981] rounded-full loader"></div>
-    <p class="mt-4 text-gray-500">Inaload duka yako...</p>
+    <p class="mt-4 text-gray-500">Loading duka yako...</p>
   </div>
 
-  <div id="toast-notification" class="toast-hidden"></div>
+  <div id="toast-notification" class="toast-hidden" style="z-index: 99999;"></div>
 
+<div id="success-modal" class="success-overlay" style="display:none;">
+  <div class="success-card">
+    <!-- SVG that draws itself -->
+    <svg class="checkmark-svg" xmlns="http://w3.org" viewBox="0 0 52 52">
+      <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+      <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+    </svg>
+    <p id="success-label">Saved</p>
+  </div>
+</div>
 
 <!-- FLOATING SHOP NAME MODAL (shows only first time) -->
 <div id="shop-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -117,7 +204,15 @@
             </div>
             <div onclick="switchPage('invoices')" class="bg-white border-2 border-[#10b981] text-[#10b981] p-6 rounded-2xl cursor-pointer hover:bg-green-50">
               <i class="fas fa-receipt text-4xl mb-3"></i>
-              <p class="font-semibold">Invoices</p>
+              <p class="font-semibold">Mauzo</p>
+            </div>
+            <div onclick="switchPage('analytics')" class="bg-white border-2 border-[#10b981] text-[#10b981] p-6 rounded-2xl cursor-pointer hover:bg-green-50">
+              <i class="fa fa-chart-line text-4xl mb-3"></i>
+              <p class="font-semibold">Analytics</p>
+            </div>
+            <div onclick="switchPage('notifications')" class="bg-[#10b981] text-white p-6 rounded-2xl cursor-pointer hover:bg-[#0f9d6e]">
+              <i class="fas fa-bell text-4xl mb-3"></i>
+              <p class="font-semibold">Notifications</p>
             </div>
           </div>
         </div>
@@ -332,8 +427,24 @@
     </h2>
     <button onclick="showCreateInvoiceModal()" 
             class="primary px-8 py-2 rounded-2xl text-white font-bold flex items-center gap-2 text-lg">
-      <i class="fas fa-plus"></i> NEW INVOICE
+      <i class="fas fa-plus"></i> SELL PRODUCT
     </button>
+  </div>
+
+  <!-- Filter Buttons -->
+  <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+    <button onclick="setInvoiceFilter('all')" 
+            id="filter-all"
+            class="filter-btn active px-5 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">All</button>
+    <button onclick="setInvoiceFilter('today')" 
+            id="filter-today"
+            class="filter-btn px-5 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">Today</button>
+    <button onclick="setInvoiceFilter('week')" 
+            id="filter-week"
+            class="filter-btn px-5 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Week</button>
+    <button onclick="setInvoiceFilter('month')" 
+            id="filter-month"
+            class="filter-btn px-5 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Month</button>
   </div>
 
   <!-- Past Invoices List -->
@@ -395,50 +506,140 @@
     <div class="flex justify-between text-xl font-bold">
           <label id="signaller" class="block text-sm font-bold text-gray-600 mb-2">Return ksh 0</label>
     </div>
-      <button onclick="showPaymentModal()" 
+     <!-- Toggle 1: Generate Receipt -->
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="font-medium text-gray-700">Generate Receipt</span>
+          <p class="text-xs text-gray-500">Customer will receive receipt</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="toggle-receipt" checked class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#10b981] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
+        </label>
+      </div>
+
+      <!-- Toggle 2: Payment on Credit (Deni) -->
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="font-medium text-gray-700">Payment on Credit (Deni)</span>
+          <p class="text-xs text-gray-500">Customer will pay later</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="toggle-credit" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#10b981] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
+        </label>
+      </div>
+
+      <button onclick="recordPayment()" 
               class="mt-6 primary w-full py-2 rounded-3xl text-white text-2xl font-bold flex items-center justify-center gap-3">
         <i class="fas fa-money-bill-wave"></i> SAVE & PAY
       </button>
     </div>
   </div>
 </div>
+<!-- Reversal Modal - FIXED SCROLLABLE VERSION -->
+<div id="reversal-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+    
+    <!-- Header -->
+    <div class="bg-red-600 text-white p-6 flex justify-between items-center rounded-t-3xl">
+      <h2 class="text-xl font-bold">Reverse Invoice #<span id="reversal-invoice-id"></span></h2>
+      <button onclick="closeReversalModal()" class="text-3xl leading-none">×</button>
+    </div>
 
-<!-- ==================== PAYMENT MODAL ==================== -->
-<div id="payment-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[70]">
-  <div class="bg-white rounded-3xl w-full max-w-sm mx-4 p-8">
-    <h2 class="text-2xl font-bold text-center mb-6">Record Payment</h2>
-    <div class="grid grid-cols-3 gap-4">
-      <button onclick="recordPayment('Cash')" class="p-6 border-2 border-gray-200 rounded-2xl hover:border-[#10b981] text-center">
-        <i class="fas fa-money-bill text-4xl mb-2"></i><br>Cash
-      </button>
-      <button onclick="recordPayment('M-Pesa')" class="p-6 border-2 border-[#10b981] rounded-2xl text-[#10b981] text-center">
-        <i class="fas fa-mobile-alt text-4xl mb-2"></i><br>M-Pesa
-      </button>
-      <button onclick="recordPayment('Card')" class="p-6 border-2 border-gray-200 rounded-2xl hover:border-[#10b981] text-center">
-        <i class="fas fa-credit-card text-4xl mb-2"></i><br>Card
+    <!-- Scrollable Content -->
+    <div class="flex-1 p-6 overflow-y-auto" id="reversal-items-list">
+      <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Footer (always visible) -->
+    <div class="p-2 border-t bg-gray-50 rounded-b-3xl">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Reason for reversal</label>
+      <select id="reversal-reason" class="w-full px-4 py-2 rounded-2xl border border-gray-300">
+        <option value="customer-return">Customer returned item</option>
+        <option value="wrong-item">Wrong item sold</option>
+        <option value="price-error">Price error</option>
+        <option value="other">Other (specify below)</option>
+      </select>
+
+      <textarea id="reversal-notes" rows="2" class="w-full mt-3 px-4 py-2 rounded-2xl border border-gray-300" placeholder="Additional notes..."></textarea>
+
+      <button onclick="confirmReversal()" 
+              class="mt-6 w-full bg-red-600 hover:bg-red-700 py-4 rounded-3xl text-white text-lg font-bold">
+        CONFIRM REVERSAL
       </button>
     </div>
-    <div class="mt-8 text-center text-sm text-gray-500">Amount: <span id="payment-amount" class="font-bold text-[#10b981]"></span></div>
   </div>
 </div>
+      <!-- ==================== ANALYTICS PAGE ==================== -->
+<div id="page-analytics" class="page hidden">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold flex items-center gap-3">
+      <i class="fas fa-chart-bar"></i> Analytics
+    </h2>
+  </div>
 
-      <!-- SHARE PAGE -->
-      <div id="page-share" class="page hidden">
-        <h2 class="text-2xl font-bold mb-6">Share Your Shop</h2>
-        <div class="bg-white rounded-3xl p-8 text-center">
-          <div id="share-qr" class="mx-auto"></div>
-          <button onclick="copyShareLink()" class="mt-8 bg-[#10b981] w-full py-4 rounded-2xl text-white">Copy Link + QR</button>
-        </div>
+  <!-- Date Filter -->
+  <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+    <button onclick="setAnalyticsFilter('today')" id="filter-today" class="filter-btn active px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">Today</button>
+    <button onclick="setAnalyticsFilter('week')" id="filter-week" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Week</button>
+    <button onclick="setAnalyticsFilter('month')" id="filter-month" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Month</button>
+    <button onclick="setAnalyticsFilter('all')" id="filter-all" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">All Time</button>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="grid grid-cols-2 gap-4 mb-8">
+    <div class="bg-white rounded-3xl p-5 shadow">
+      <div class="text-sm text-gray-500">Total Revenue</div>
+      <div id="total-revenue" class="text-3xl font-bold text-[#10b981]">KSh 0</div>
+      <div id="revenue-change" class="text-sm mt-1"></div>
+    </div>
+    <div class="bg-white rounded-3xl p-5 shadow">
+      <div class="text-sm text-gray-500">Total Sales</div>
+      <div id="total-sales" class="text-3xl font-bold">0</div>
+      <div id="sales-change" class="text-sm mt-1"></div>
+    </div>
+    <div class="bg-white rounded-3xl p-5 shadow">
+      <div class="text-sm text-gray-500">Avg Sale</div>
+      <div id="avg-sale" class="text-3xl font-bold">KSh 0</div>
+    </div>
+    <div class="bg-white rounded-3xl p-5 shadow">
+      <div class="text-sm text-gray-500">Credit Owed</div>
+      <div id="total-credit" class="text-3xl font-bold text-red-600">KSh 0</div>
+    </div>
+  </div>
+
+  <!-- Top Selling -->
+  <div class="mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-semibold">Top Selling Products</h3>
+      <div class="flex gap-2 text-sm">
+        <button onclick="setTopSellingTab(0)" id="top-tab-0" class="top-tab-btn active px-4 py-1 rounded-xl">By Quantity</button>
+        <button onclick="setTopSellingTab(1)" id="top-tab-1" class="top-tab-btn px-4 py-1 rounded-xl">By Revenue</button>
       </div>
     </div>
+    <div id="top-selling-list" class="space-y-3"></div>
+  </div>
 
+  <!-- Stock Health -->
+  <div class="mb-8">
+    <h3 class="font-semibold mb-4">Stock Health</h3>
+    <div id="stock-health" class="space-y-3"></div>
+  </div>
+
+  <!-- Recent Invoices -->
+  <div>
+    <h3 class="font-semibold mb-4">Recent Sales</h3>
+    <div id="recent-invoices" class="space-y-4"></div>
+  </div>
+</div>
     <!-- BOTTOM NAV (mobile) -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden z-50">
       <div class="flex justify-around py-2">
         <button onclick="switchPage('home')" id="homeBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-home text-2xl"></i><span class="text-xs">Home</span></button>
         <button onclick="switchPage('products')" id="productsBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-box text-2xl"></i><span class="text-xs">Products</span></button>
         <button onclick="switchPage('invoices')" id="invoicesBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-receipt text-2xl"></i><span class="text-xs">Sales</span></button>
-        <button onclick="switchPage('share')" id="shareBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-chart-line text-2xl"></i><span class="text-xs">Analytics</span></button>
+        <button onclick="switchPage('analytics')" id="analyticsBut" class="flex flex-col items-center" style="border-radius: 5px;"><i class="fas fa-chart-line text-2xl"></i><span class="text-xs">Analytics</span></button>
       </div>
     </nav>
   </div>
@@ -461,7 +662,9 @@
 
   productVariants: "id, productId, name, sellingPrice, costPrice, stockQuantity, expiryDate, createdAt",
 
-  customers: "id, name, phone, createdAt",
+  customers: "id, name, phone, createdAt, debt",
+
+  creditors: "id, customerId, dateLoaned, amountOwed",
 
   invoices: "id, customerId, totalAmount, status, createdAt",
 
@@ -486,11 +689,11 @@ async function saveShopName() {
   const owner = document.getElementById('shop-owner-input').value.trim();
   
   if (!name) {
-    alert("Ingiza jina la duka lako kwanza!");
+    showNotification("Ingiza jina la duka lako kwanza!");
     return;
   }
   if (!owner) {
-    alert("Ingiza jina lako kama mfanyabiashara!");
+    showNotification("Ingiza jina lako kama mfanyabiashara!");
     return;
   }  
   //const id = name+"-"+owner;
@@ -504,7 +707,7 @@ async function saveShopName() {
   // Update header with shop name
   updateHeaderShopName(nameq,owner1);
   
-  alert(`✅ Karibu: ${owner1}\nSasa wewe ni CEO wa ${nameq}!`);
+  showSuccess(`✅ Karibu: ${owner1}\nSasa wewe ni CEO wa ${nameq}!`);
 }
 
 // UPDATE HEADER WITH SHOP NAME
@@ -535,25 +738,28 @@ function switchPage(page) {
         document.getElementById('homeBut').style.backgroundColor="var(--primary)";
         document.getElementById('productsBut').style.backgroundColor="";
         document.getElementById('invoicesBut').style.backgroundColor="";
-        document.getElementById('shareBut').style.backgroundColor="";
+        document.getElementById('analyticsBut').style.backgroundColor="";
 
       }else if(page=="invoices") {
         document.getElementById('homeBut').style.backgroundColor="";
         document.getElementById('productsBut').style.backgroundColor="";
         document.getElementById('invoicesBut').style.backgroundColor="var(--primary)";
-        document.getElementById('shareBut').style.backgroundColor="";
+        document.getElementById('analyticsBut').style.backgroundColor="";
       } else if(page=="products") {
-        
+         loadProducts();
+         //showSuccess("Products loaded successfully!");
         document.getElementById('homeBut').style.backgroundColor="";
         document.getElementById('productsBut').style.backgroundColor="var(--primary)";
         document.getElementById('invoicesBut').style.backgroundColor="";
-        document.getElementById('shareBut').style.backgroundColor="";
+        document.getElementById('analyticsBut').style.backgroundColor="";
 
-      } else if (page=="share") {
+
+      } else if (page=="analytics") {
+        loadAnalytics();
          document.getElementById('homeBut').style.backgroundColor="";
         document.getElementById('productsBut').style.backgroundColor="";
         document.getElementById('invoicesBut').style.backgroundColor="";
-        document.getElementById('shareBut').style.backgroundColor="var(--primary)";
+        document.getElementById('analyticsBut').style.backgroundColor="var(--primary)";
 
       }
     }
@@ -561,6 +767,7 @@ function switchPage(page) {
     // === LOAD PRODUCTS ===
     async function loadProducts() {
       const products = await db.products.toArray();
+      await Promise.all(products.map(p => refreshProductTotals(p.id)));
       const container = document.getElementById('product-list');
       container.innerHTML = products.map(p => `
         <div class="bg-white rounded-2xl overflow-hidden shadow">
@@ -572,7 +779,7 @@ function switchPage(page) {
           <div class="p-4">
             <h3 class="font-bold">${p.name}</h3>
             <p class="text-[#10b981] font-bold">Invested KSh ${p.totalCost}</p>
-            <p class="text-blue-500 font-bold">Expected Profit(Profit only): KSh ${p.expectedReturn}</p>
+            <p class="text-blue-500 font-bold">Expected return from the available stock: KSh ${p.expectedReturn}</p>
             <p class="text-sm text-gray-500">In Stock: ${p.stock}</p>
             <button onclick="showAddVariantModal('${p.name}','${p.id}')" class="mt-3 bg-[#10b981] w-full py-2 rounded-2xl text-white text-sm font-medium">Restock</button>
           </div>
@@ -595,8 +802,8 @@ async function saveNewProduct() {
                   .where('name')
                   .equalsIgnoreCase(name)
                   .first();
-  if (product) return alert("Product with this name already exists you can proceed to add variants, search it above kama hauioni.");
-  if (!name) return alert("Product name required!");
+  if (product) return showNotification("Product with this name already exists you can proceed to add variants, search it above kama hauioni.");
+  if (!name) return showNotification("Product name required!");
   const ShopName= (await db.shop.get(1))?.name;
   const createdAt = new Date().toISOString();
   const id= ShopName+"-"+name+"-"+createdAt;
@@ -605,7 +812,7 @@ async function saveNewProduct() {
   const expectedReturn=0;
   await db.products.add({ id,name, createdAt,stock,totalCost,expectedReturn });
 
-  alert(`✅ Product "${name}" added!`);
+  showSuccess(`✅ Product "${name}" added!`);
   await loadProducts();
   closeProductModal();
   // Reload your product list here if you have one
@@ -620,7 +827,7 @@ async function editProduct(productId) {
   currentEditingVariantId = null;
 
   const product = await db.products.get(productId);
-  if (!product) return alert("Product not found!");
+  if (!product) return showNotification("Product not found!");
 
   document.getElementById('edit-product-name').value = product.name;
   document.getElementById('edit-product-name').disabled = true;
@@ -681,7 +888,7 @@ async function saveEditedProductAndVariant() {
       expiryDate: document.getElementById('edit-variant-expiry').value || null
     });
   }else{
-    alert("No changes: err");
+    showNotification("No changes: err");
     return
   }
 
@@ -692,7 +899,7 @@ async function saveEditedProductAndVariant() {
   await refreshProductTotals(currentEditingProductId);
   await loadProducts();
   closeEditProductModal();
-  alert("✅ Changes saved!");
+  showSuccess("✅ Changes saved!");
   if (typeof loadProducts === 'function') loadProducts();   // refresh list
 }
 
@@ -741,7 +948,7 @@ async function saveNewVariant() {
   const stockQuantity = parseInt(document.getElementById('variant-stock').value) || 0;
   const expiryDate = document.getElementById('variant-expiry').value || null;
   const id=productId+"-"+name+"-"+new Date().toISOString();
-  if (!productId || !name || !sellingPrice || !costPrice || !stockQuantity || !expiryDate || expiryDate=="mm/dd/yyyy") return alert(" All Product and variant details required!");
+  if (!productId || !name || !sellingPrice || !costPrice || !stockQuantity || !expiryDate || expiryDate=="mm/dd/yyyy") return showNotification(" All Product and variant details required!");
 
   const createdAt = new Date().toISOString();
   await db.productVariants.add({
@@ -755,7 +962,7 @@ async function saveNewVariant() {
     createdAt
   });
 
-  alert(`✅ Variant "${name}" saved!`);
+ showSuccess(`✅ Variant "${name}" saved!`);
   
 
  await refreshProductTotals(productId);
@@ -772,15 +979,20 @@ function cleanCurrency(value) {
     return parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
 }
 //calculate balance during sales
+
+let debt=0;
 async function calculateBalance() {
       const amountReq=cleanCurrency(document.getElementById('cart-total').textContent);
       const amountRec=cleanCurrency(document.getElementById('balanceCalculate').value);
       let balance = amountRec-amountReq;
       if (balance<0){
-        let debt = Math.abs(balance);
+        debt = Math.abs(balance);
+        
+        document.getElementById('toggle-credit').checked = true;
         document.getElementById('signaller').textContent=`Client to add  ksh ${debt}`;
         return;
       } else if(balance>=0){
+        document.getElementById('toggle-credit').checked = false;
         document.getElementById('signaller').textContent=`Return ksh ${balance} to Client`;
         return;
       }     
@@ -795,7 +1007,7 @@ async function showManageVariants(productId) {
   currentProductId = productId;
   
   const product = await db.products.get(productId);
-  if (!product) return alert("Product not found");
+  if (!product) return showNotification("Product not found");
   
   document.getElementById('manage-product-name').textContent = product.name;
   document.getElementById('manage-variants-modal').classList.remove('hidden');
@@ -843,7 +1055,7 @@ async function confirmDeleteVariant(variantId, productId) {
   await refreshProductTotals(productId);
   await loadVariantsList();    
   await loadProducts();       // refresh the list
-  alert("✅ Variant deleted");
+  showSuccess("✅ Variant deleted");
 }
 
 // ==================== DELETE ENTIRE PRODUCT + ALL VARIANTS ====================
@@ -854,7 +1066,7 @@ async function confirmDeleteEntireProduct() {
   const message = `⚠️ DANGER!\n\nDelete "${product.name}" completely?\n\nThis will delete:\n• The product\n• ALL its variants\n• All related sales data will stay but links will break.\n\nType "DELETE" to confirm:`;
   
   const confirmText = prompt(message);
-  if (confirmText !== "DELETE") return alert("Deletion cancelled.");
+  if (confirmText !== "DELETE") return showNotification("Deletion cancelled.");
   
   // Delete all variants first
   await db.productVariants.where('productId').equals(currentProductId).delete();
@@ -863,7 +1075,7 @@ async function confirmDeleteEntireProduct() {
   await db.products.delete(currentProductId);
   
   closeManageVariantsModal();
-  alert(`✅ Product "${product.name}" and all variants deleted!`);
+  showSuccess(`✅ Product "${product.name}" and all variants deleted!`);
   
   // Refresh your main product list (call your existing loadProducts() here)
   if (typeof loadProducts === 'function') loadProducts();
@@ -890,6 +1102,7 @@ async function refreshProductTotals(productId) {
   const variants = await db.productVariants
     .where('productId')
     .equals(productId)
+    .filter(variant => variant.stockQuantity > 0) // Only includes items in stock
     .toArray();
 
   // 2. Initialize our counters
@@ -913,7 +1126,7 @@ async function refreshProductTotals(productId) {
     
     
   });
-  profit=totalExpectedReturn-totalCost;
+  profit=totalExpectedReturn;
 
   // 4. Update the main product table
   await db.products.update(productId, {
@@ -986,7 +1199,7 @@ function productEventMonitor(){
   });
 
 }
-
+/*
 async function showShareQR() {
       const url = await generateShareLink();
       const qrDiv = document.getElementById('share-qr');
@@ -998,7 +1211,7 @@ async function showShareQR() {
         colorDark: "#10b981",
         colorLight: "#ffffff"
       });
-}
+}*/
 
 function copyShareLink() {
       generateShareLink().then(url => {
@@ -1058,25 +1271,65 @@ function renderProducts(list) {
 let currentCart = [];
 let currentInvoiceId = null;
 
-// Load past invoices
+//let currentInvoiceFilter = 'all';   // default
+
+// Set active filter button
+function setInvoiceFilter(filter) {
+  currentInvoiceFilter = filter;
+
+  // Update active button style
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active', 'bg-[#10b981]', 'text-white');
+    if (btn.id === `filter-${filter}`) {
+      btn.classList.add('active', 'bg-[#10b981]', 'text-white');
+    }
+  });
+
+  loadInvoices();
+}
+
+// Main function to load and filter invoices
 async function loadInvoices() {
-  const invoices = await db.invoices.orderBy('createdAt').reverse().toArray();
+  let invoices = await db.invoices.orderBy('createdAt').reverse().toArray();
+
+  // Apply filter
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  if (currentInvoiceFilter === 'today') {
+    invoices = invoices.filter(inv => new Date(inv.createdAt) >= startOfDay);
+  } 
+  else if (currentInvoiceFilter === 'week') {
+    invoices = invoices.filter(inv => new Date(inv.createdAt) >= startOfWeek);
+  } 
+  else if (currentInvoiceFilter === 'month') {
+    invoices = invoices.filter(inv => new Date(inv.createdAt) >= startOfMonth);
+  }
+  // 'all' shows everything (already loaded)
+
   const container = document.getElementById('invoice-list');
-  container.innerHTML = invoices.length === 0 
-    ? `<p class="text-gray-500 text-center py-12">No invoices yet. Create your first sale! 🎉</p>`
-    : invoices.map(inv => `
-      <div class="bg-white rounded-3xl p-6 shadow flex justify-between items-center">
-        <div>
-          <div class="font-semibold">#${inv.id}</div>
-          <div class="text-sm text-gray-500">${new Date(inv.createdAt).toLocaleDateString('sw-KE')}</div>
-        </div>
-        <div class="text-right">
-          <div class="text-2xl font-bold text-[#10b981]">KSh ${inv.totalAmount}</div>
-          <div class="text-xs px-3 py-1 inline-block bg-green-100 text-green-700 rounded-2xl">${inv.status}</div>
-        </div>
-        <button onclick="viewInvoice(${inv.id})" class="ml-6 text-[#10b981]"><i class="fas fa-eye"></i></button>
+
+  if (invoices.length === 0) {
+    container.innerHTML = `<p class="text-gray-500 text-center py-12">No invoices found for this filter.</p>`;
+    return;
+  }
+
+  container.innerHTML = invoices.map(inv => `
+    <div class="bg-white rounded-3xl p-6 shadow flex justify-between items-center">
+      <div>
+        <div class="font-semibold">#${inv.id}</div>
+        <div class="text-sm text-gray-500">${new Date(inv.createdAt).toLocaleDateString('sw-KE')}</div>
       </div>
-    `).join('');
+      <div class="text-right">
+        <div class="text-2xl font-bold text-[#10b981]">KSh ${inv.totalAmount}</div>
+        <div class="text-xs px-3 py-1 inline-block bg-green-100 text-green-700 rounded-2xl">${inv.status}</div>
+      </div>
+      <button onclick="viewInvoice('${inv.id}')" class="ml-6 text-[#10b981]"><i class="fas fa-eye"></i></button>
+    </div>
+  `).join('');
 }
 
 // Show create invoice modal
@@ -1098,6 +1351,7 @@ async function showCreateInvoiceModal() {
 function closeCreateInvoiceModal() {
   document.getElementById('create-invoice-modal').classList.add('hidden');
   currentCart = [];
+  document.getElementById('balanceCalculate').value = '';
 }
 function showNotification(message) {
   const toast = document.getElementById('toast-notification');
@@ -1273,31 +1527,68 @@ function removeFromCart(index) {
 }
 
 // Payment modal
-async function showPaymentModal() {
-  const total = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  if (total === 0) return alert("Cart is empty!");
-  
-  document.getElementById('payment-amount').textContent = `KSh ${total}`;
-  document.getElementById('payment-modal').classList.remove('hidden');
-}
 
 // Record payment & save everything
-async function recordPayment(method) {
+async function recordPayment() {
+  const balanceCalculate = document.getElementById('balanceCalculate').value;
+  if (!balanceCalculate){
+    showNotification("Enter Amount Received to determine balance and if credit sale is needed");
+    document.getElementById('balanceCalculate').focus();
+    return;
+  }
   const total = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const customerId = parseInt(document.getElementById('invoice-customer').value) || null;
+  const customerId = document.getElementById('invoice-customer').value || "walk-in";
   const createdAt = new Date().toISOString();
+  const generateReceipt = await document.getElementById('toggle-receipt').checked;
+  const creditSale =await document.getElementById('toggle-credit').checked;
+  let status="paid";
+  if(creditSale && debt<=0){
+    showNotification("No credit sale needed, customer has no outstanding balance");
+    return;
+  }
+  if (creditSale && !customerId) {
+    showNotification("Select a customer for credit sale");
+    return;
+  }
+  if(creditSale && customerId === "walk-in"){
+    showNotification("Select an existing customer for credit sale, or create a new customer profile to track this debt");
+    return;
+  }
+  if(creditSale){
+    status= "Deni";
 
+  }
+  if(total<=0) {
+    showNotification("Searh and Add products you wish to sell");
+    return;
+  }
+  if(creditSale && parseInt(document.getElementById('balanceCalculate').value) >= total){
+    showNotification("No credit sale needed, amount received covers total");
+    return;
+  }
+  const invoicesId = `${customerId}-${createdAt}`;
+  showSuccess(`Processing payment of KSh ${total}...`);
   // 1. Create invoice  
   const invoiceId = await db.invoices.add({
+    id: invoicesId,
     customerId,
     totalAmount: total,
-    status: 'paid',
+    status: status,
     createdAt
   });
 
   // 2. Add invoice items
   for (const item of currentCart) {
+    // Reduce stock
+    await db.productVariants.where('id').equals(item.variantId).modify(variant => {
+      variant.stockQuantity -= item.quantity;
+    });
+  }
+  for (const item of currentCart) {
+    
+    const invoiceItemsId= `${item.variantId}-${invoiceId}`;
     await db.invoiceItems.add({
+      id: invoiceItemsId,
       invoiceId,
       productId: item.productId,
       variantId: item.variantId,
@@ -1305,69 +1596,675 @@ async function recordPayment(method) {
       priceAtSale: item.price
     });
   }
+  if (creditSale){
+    await db.creditors.add({
+        id: invoicesId,
+        customerId: customerId,
+        dateLoaned: createdAt,
+        amountOwed: debt,
+    });
+    //update customer total debt
+    await db.customers.where('id').equals(customerId).modify(customer => {
+      customer.debt = (customer.debt || 0) + debt;
+    });
+  }
 
-  // 3. Record payment
+  /*
   await db.payments.add({
     invoiceId,
     amount: total,
     method,
     createdAt
   });
-
+*/
   // 4. Optional: changelog
-  await db.changelog.add({
+  /*await db.changelog.add({
     entity: 'invoice',
     entityId: invoiceId,
     action: 'created',
     timestamp: createdAt
-  });
+  });*/
 
   // 5. Generate PDF + QR
-  closeCreateInvoiceModal();
-  document.getElementById('payment-modal').classList.add('hidden');
-  await generateInvoicePDF(invoiceId);
+
+  if (generateReceipt) {
+    showSuccess("Generating PDF receipt...");
+    await generateInvoicePDF(invoiceId, creditSale);
+  }
   
+  closeCreateInvoiceModal();
+  //document.getElementById('payment-modal').classList.add('hidden');
+  
+  showSuccess(`Invoice #${invoiceId} saved and ${creditSale ? 'marked as Deni' : 'paid'}!`);
   loadInvoices(); // refresh list
-  alert(`✅ Invoice #${invoiceId} saved & paid via ${method}!\nPDF ready for print.`);
+  //alert(`✅ Invoice #${invoiceId} saved & paid \nPDF ready for print.`);
 }
 
 // Simple PDF (expand later with full details)
-async function generateInvoicePDF(invoiceId) {
+async function generateInvoicePDF(invoiceId, isCredit = false) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(20);
-  doc.text("DukaLoop KE", 20, 20);
-  doc.text(`Invoice #${invoiceId}`, 20, 40);
-  doc.text(`Total: KSh ${currentCart.reduce((sum, i) => sum + i.price * i.quantity, 0)}`, 20, 60);
   
-  // M-Pesa QR placeholder (real QR would be generated here)
+  // Estimate height based on number of items
+  const pageHeight = 110 + (currentCart.length * 8);
+  const doc = new jsPDF({
+    unit: "mm",
+    format: [80, pageHeight]
+  });
+  const AmountOwed =  debt;
+  const shopData = await db.shop.get(1);
+  const centerX = 40;
+  let y = 15;
+
+  // ==================== HEADER ====================
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(shopData.name.toUpperCase(), centerX, y, { align: "center" });
+
+  y += 8;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("Quality Goods & Services", centerX, y, { align: "center" });
+
+  y += 6;
+  doc.text("-".repeat(45), centerX, y, { align: "center" });
+
+  // ==================== RECEIPT TYPE ====================
+  y += 8;
+  if (isCredit) {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("CREDIT SALE / DENI", centerX, y, { align: "center" });
+    y += 6;
+  } else {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("RECEIPT", centerX, y, { align: "center" });
+    y += 6;
+  }
+
+  // ==================== INFO ====================
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Receipt #: ${invoiceId}`, 10, y);
+  y += 5;
+  doc.text(`Date: ${new Date().toLocaleDateString('en-KE')}`, 10, y);
+  y += 5;
+  doc.text(`Time: ${new Date().toLocaleTimeString('en-KE')}`, 10, y);
+  y += 5;
+  doc.text("-".repeat(45), centerX, y, { align: "center" });
+
+  // ==================== ITEMS ====================
+  y += 8;
+  doc.setFont("helvetica", "bold");
+  doc.text("ITEM", 10, y);
+  doc.text("QTY", 45, y);
+  doc.text("TOTAL", 70, y, { align: "right" });
+
+  y += 5;
+  doc.setFont("helvetica", "normal");
+
+  currentCart.forEach((item) => {
+    const itemName = item.name.substring(0, 18); // prevent overflow
+    doc.text(itemName, 10, y);
+    doc.text(`${item.quantity}`, 47, y);
+    doc.text(`${(item.price * item.quantity).toLocaleString()}`, 70, y, { align: "right" });
+    y += 6;
+  });
+
+  // ==================== TOTALS ====================
+  y += 4;
+  doc.text("-".repeat(45), centerX, y, { align: "center" });
+
+  y += 9;
   doc.setFontSize(12);
-  doc.text("Scan to pay via M-Pesa (demo)", 20, 100);
-  doc.save(`invoice-${invoiceId}.pdf`);
+  doc.setFont("helvetica", "bold");
+
+  const total = currentCart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  if (isCredit) {
+    doc.text("AMOUNT OWED:", 10, y);
+    doc.text(`KSh ${debt.toLocaleString()}`, 70, y, { align: "right" });
+  } else {
+    doc.text("TOTAL:", 10, y);
+    doc.text(`KSh ${total.toLocaleString()}`, 70, y, { align: "right" });
+  }
+
+  // ==================== FOOTER ====================
+  y += 15;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text("ASANTE KWA KUTUTEMBELEA!", centerX, y, { align: "center" });
+
+  if (isCredit) {
+    y += 6;
+    doc.text("Please clear balance soon", centerX, y, { align: "center" });
+  } else {
+    y += 6;
+    doc.text("Visit again soon", centerX, y, { align: "center" });
+  }
+
+  // Optional border
+  doc.rect(2, 2, 76, pageHeight - 4);
+
+  // Save the file
+  const filename = isCredit 
+    ? `Deni-${invoiceId}.pdf` 
+    : `Receipt-${invoiceId}.pdf`;
+  
+  doc.save(filename);
+}
+/*
+
+// ==================== VIEW INVOICE (Eye icon) ====================
+async function viewInvoice(id) {
+  const invoice = await db.invoices.get(id);
+  if (!invoice) {
+    showNotification("Invoice not found");
+    return;
+  }
+
+  // Load items for this invoice
+  const items = await db.invoiceItems.where('invoiceId').equals(id).toArray();
+
+  let html = `
+    <div class="text-sm text-gray-500 mb-4">
+      Date: ${new Date(invoice.createdAt).toLocaleString('en-KE')}<br>
+      Status: <span class="font-medium">${invoice.status}</span>
+    </div>
+    <div class="space-y-4">
+  `;
+
+  items.forEach(item => {
+    html += `
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <div class="font-medium">${item.productId} — ${item.variantId}</div>
+          <div class="text-sm text-gray-500">${item.quantity} × KSh ${item.priceAtSale}</div>
+        </div>
+        <div class="text-right">
+          <div class="font-bold">KSh ${(item.quantity * item.priceAtSale).toLocaleString()}</div>
+          <button onclick="startReversal('${id}', '${item.id}')" 
+                  class="text-red-600 text-xs mt-1 hover:underline">Return this item</button>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+
+  // Show full invoice details in a modal or alert for now
+  // (You can replace this with a nicer modal later)
+  const fullView = document.createElement('div');
+  fullView.className = "fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]";
+  fullView.innerHTML = `
+    <div class="bg-white rounded-3xl w-full max-w-md mx-4 p-6">
+      <h3 class="text-lg font-bold mb-4">Invoice #${id}</h3>
+      ${html}
+      <div class="flex gap-3 mt-8">
+        <button onclick="this.closest('.fixed').remove(); generateInvoicePDF('${id}', ${invoice.status === 'Deni'})" 
+                class="flex-1 py-3 bg-[#10b981] text-white rounded-2xl font-medium">
+          Reprint Receipt
+        </button>
+        <button onclick="startFullReversal('${id}'); this.closest('.fixed').remove()" 
+                class="flex-1 py-3 bg-red-600 text-white rounded-2xl font-medium">
+          Reverse Entire Invoice
+        </button>
+      </div>
+      <button onclick="this.closest('.fixed').remove()" class="w-full mt-3 text-gray-500">Close</button>
+    </div>`;
+  document.body.appendChild(fullView);
+}
+*/
+// Global variables for reversal
+let currentReversingInvoiceId = null;
+let currentReversingItemId = null;   // null = full invoice reversal
+
+// ==================== VIEW INVOICE (Eye icon) ====================
+async function viewInvoice(id) {
+  const invoice = await db.invoices.get(id);
+  if (!invoice) return showNotification("Invoice not found");
+
+  const items = await db.invoiceItems.where('invoiceId').equals(id).toArray();
+
+  let html = `
+    <div class="mb-6 text-sm text-gray-500">
+      <strong>Date:</strong> ${new Date(invoice.createdAt).toLocaleString('en-KE')}<br>
+      <strong>Status:</strong> <span class="font-medium">${invoice.status}</span>
+    </div>
+    <div class="space-y-4">
+  `;
+
+  items.forEach(item => {
+    html += `
+      <div class="flex justify-between items-center border-b pb-4  grid grid-cols-2 gap-4">
+        <div class="flex-1">
+          <div class="font-medium">${item.productId} — ${item.variantId}</div>
+          <div class="text-sm text-gray-500">${item.quantity} × KSh ${item.priceAtSale}</div>
+        </div>
+        <div class="text-right">
+          <div class="font-bold">KSh ${(item.quantity * item.priceAtSale).toLocaleString()}</div>
+          <button onclick="startReversal('${id}', '${item.id}')" 
+                  class="text-red-600 text-xs mt-2 hover:underline">Return this item</button>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+
+  // Show modal
+  const modalHTML = `
+    <div id="invoice-modalr" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[50]">
+      <div class="bg-white rounded-3xl w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-hidden flex flex-col">
+        <h3 class="text-lg font-bold mb-4">Invoice #${id}</h3>
+        <div class="flex-1 overflow-y-auto">${html}</div>
+        <div class="flex gap-3 mt-6">
+          <button onclick="reprintFromView('${id}', ${invoice.status === 'Deni'})" 
+                  class="flex-1 py-3 bg-[#10b981] text-white rounded-2xl font-medium">
+            Reprint Receipt
+          </button>
+          <button onclick="startFullReversal('${id}'); this.closest('.fixed').remove()" 
+                  class="flex-1 py-3 bg-red-600 text-white rounded-2xl font-medium">
+            Reverse Entire Invoice
+          </button>
+        </div>
+        <button onclick="this.closest('.fixed').remove()" class="w-full mt-3 text-gray-500">Close</button>
+      </div>
+    </div>`;
+  
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = modalHTML;
+  document.body.appendChild(tempDiv.firstElementChild);
 }
 
-function viewInvoice(id) {
-  alert(`Invoice #${id} details coming in next upgrade (full view + reprint).`);
+// ==================== START REVERSAL (single item) ====================
+async function startReversal(invoiceId, itemId) {
+  currentReversingInvoiceId = invoiceId;
+  currentReversingItemId = itemId;
+  document.getElementById('reversal-items-list').classList.remove('hidden');
+  const item = await db.invoiceItems.get(itemId);
+  if (!item){
+    showNotification("Item not found for reversal");
+     return;
+  }
+  const html = `
+    <div class="p-4 bg-gray-50 rounded-2xl mb-6 z-[50]">
+      <div class="font-medium">${item.productId} — ${item.variantId}</div>
+      <div class="text-sm text-gray-600">${item.quantity} units × KSh ${item.priceAtSale}</div>
+    </div>
+    <p class="text-sm text-gray-600 mb-3">Ngapi zimerudishwa?</p>
+    <input type="number" id="return-quantity" value="${item.quantity}" min="1" max="${item.quantity}" 
+           class="w-full text-center text-3xl py-4 border border-gray-300 rounded-2xl">
+  `;
+
+  document.getElementById('reversal-items-list').innerHTML = html;
+  document.getElementById('reversal-modal').classList.remove('hidden');
 }
 
+// ==================== FULL INVOICE REVERSAL ====================
+async function startFullReversal(invoiceId) {
+  currentReversingInvoiceId = invoiceId;
+  currentReversingItemId = null;
+
+  const items = await db.invoiceItems.where('invoiceId').equals(invoiceId).toArray();
+
+  let html = `<p class="text-sm mb-4 ">Reversing the entire invoice:</p>`;
+  items.forEach(item => {
+    html += `<div class="flex justify-between text-sm py-2 border-b"><span>${item.productId} — ${item.variantId}</span><span>${item.quantity} units</span></div>`;
+  });
+
+  document.getElementById('reversal-items-list').innerHTML = html;
+  document.getElementById('reversal-modal').classList.remove('hidden');
+}
+
+// ==================== CONFIRM REVERSAL ====================
+async function confirmReversal() {
+  const reason = document.getElementById('reversal-reason').value;
+  const notes = document.getElementById('reversal-notes').value.trim();
+  const qtyInput = document.getElementById('return-quantity');
+  const returnQty = qtyInput ? parseInt(qtyInput.value) : null;
+  const items = currentReversingItemId ? await db.invoiceItems.get(currentReversingItemId) : null;
+  
+  if (items===null && currentReversingItemId){
+    showNotification("Item not found for reversal");
+    return;
+  }
+  if (qtyInput && (isNaN(returnQty) || returnQty < 1)) {
+    showNotification("Enter a valid quantity to return");
+    return;
+  }
+  
+  
+
+
+  try {
+    const invoice = await db.invoices.get(currentReversingInvoiceId);
+    const customer = await db.customers.get(invoice.customerId);
+    if (!invoice) throw new Error("Invoice not found");
+
+    if (currentReversingItemId) {
+      // Partial reversal
+      const item = await db.invoiceItems.get(currentReversingItemId);
+      const qtyToReturn = returnQty || item.quantity;
+      if (qtyInput && returnQty > item.quantity) {
+        showNotification("Return quantity cannot exceed purchased quantity");
+        return;
+      }
+
+      // Restore stock to exact variant row
+      await db.productVariants.where('id').equals(item.variantId).modify(v => {
+        v.stockQuantity += qtyToReturn;
+      
+      });
+      // update the invoice item quantity 
+      if (qtyToReturn === item.quantity) {
+        // Full item return - delete the invoice item
+        await db.invoiceItems.delete(currentReversingItemId);
+         await db.invoiceItems.update(currentReversingItemId, { quantity: item.quantity - qtyToReturn });
+        await db.invoices.update(currentReversingInvoiceId, { totalAmount: invoice.totalAmount - (qtyToReturn * item.priceAtSale) });
+      } else {
+        // Partial return - update quantity
+        await db.invoiceItems.update(currentReversingItemId, { quantity: item.quantity - qtyToReturn });
+        await db.invoices.update(currentReversingInvoiceId, { totalAmount: invoice.totalAmount - (qtyToReturn * item.priceAtSale) });
+        if(invoice.status==='Deni'){
+          
+          await db.creditors.where('customerId').equals(customer.id).modify(credit => {
+            credit.amountOwed = Math.max(0, credit.amountOwed - (qtyToReturn * item.priceAtSale));
+          });
+          await db.customers.where('id').equals(invoice.customerId).modify(c => {
+            if (c.debt) c.debt = Math.max(0, c.debt - (qtyToReturn * item.priceAtSale));
+          });
+        
+      }
+        
+      }
+      await db.invoices.update(currentReversingInvoiceId, { status: 'partially reversed' });
+    } else {
+      // Full reversal
+       await db.invoices.update(currentReversingInvoiceId, { totalAmount: 0 });
+      const items = await db.invoiceItems.where('invoiceId').equals(currentReversingInvoiceId).toArray();
+      for (const item of items) {
+        await db.productVariants.where('id').equals(item.variantId).modify(v => {
+          v.stockQuantity += item.quantity;
+        });
+        await db.invoiceItems.delete(item.id);
+      }
+        
+        if(invoice.status==='Deni') {
+          let creditor =await db.creditors.where('customerId').equals(customer.id).first();
+          debt= creditor.amountOwed;
+          let totalAmountToReduce= invoice.totalAmount;
+          let minus= debt-totalAmountToReduce;
+          if(minus<0){
+            debt=0;
+          }else{
+            debt=minus;
+          }
+          
+       
+          await db.customers.where('id').equals(invoice.customerId).modify(c => {
+            if (c.debt) c.debt = debt;
+          });
+          await db.creditors.where('customerId').equals(customer.id).modify(credit => {
+            credit.amountOwed = debt;
+          });
+      await db.invoices.update(currentReversingInvoiceId, { status: 'reversed' });
+    } else if(invoice.status==='Deni' && currentReversingItemId) {
+        const updatedInvoice = await db.invoices.get(currentReversingInvoiceId);
+        if(updatedInvoice.totalAmount <= 0){
+          await db.invoices.update(currentReversingInvoiceId, { status: 'reversed' });
+        }else{
+          await db.invoices.update(currentReversingInvoiceId, { status: 'partially reversed' });
+        }
+      
+      }else {
+        await db.invoices.update(currentReversingInvoiceId, { status: 'reversed' });
+      } 
+
+    // If it was credit, reduce customer debt
+    
+
+    // Log to changelog safely
+    await db.changelog.add({
+      id: 'chg_' + Date.now(),           // provide explicit id
+      entity: 'invoice',
+      entityId: currentReversingInvoiceId,
+      action: 'reversed',
+      timestamp: new Date().toISOString()
+    });
+
+    
+       // refresh list
+
+  }
+  showSuccess(`Invoice #${currentReversingInvoiceId} reversed successfully. Stock restored.`);
+   closeReversalModal();
+  loadInvoices();
+
+ } catch (err) {
+    console.error(err);
+    showNotification("Failed to reverse invoice. Please try again.");
+  }
+
+}
+
+// Close modal
+function closeReversalModal() { 
+  document.getElementById('reversal-modal').classList.add('hidden');
+  
+  //document.getElementById('reversal-items-list').classList.add('hidden');
+  currentReversingInvoiceId = null;
+  currentReversingItemId = null;
+  
+  debt=0;
+}
+
+// Helper to reprint from viewInvoice
+async function reprintFromView(invoiceId, isCredit) {
+  // Temporarily load items into currentCart so generateInvoicePDF can work
+  const items = await db.invoiceItems.where('invoiceId').equals(invoiceId).toArray();
+  // Note: You may need to map them properly to match currentCart structure
+  currentCart = items.map(i => ({
+    productId: i.productId,
+    variantId: i.variantId,
+    name: i.variantId,           // fallback
+    price: i.priceAtSale,
+    quantity: i.quantity
+  }));
+
+  await generateInvoicePDF(invoiceId, isCredit);
+  currentCart = [];   // clear after reprint
+}
 // Quick customer (optional)
-function quickAddCustomer() {
+async function quickAddCustomer() {
   const name = prompt("Customer name?");
   if (name) {
-    db.customers.add({ name, phone: "", createdAt: new Date().toISOString() }).then(() => {
-      alert("Customer saved. Refreshing...");
+    console.log(`Adding customer: ${name}`);
+    const id= `${name}-${Date.now()}`;
+    await db.customers.add({ id: id,name, phone: "", createdAt: new Date().toISOString() , debt: 0 }).then(() => {
+      console.log("Customer added successfully");
+      showSuccess("Customer saved. Refreshing...");
       showCreateInvoiceModal(); // reopen to refresh list
+      console.log("Customer added and invoice modal refreshed");
     });
   }
+  //alert("Customer name required!");
+  
+}
+function showSuccess(message) {
+  const overlay = document.getElementById('success-modal');
+  const label = document.getElementById('success-label');
+  
+  label.textContent = message;
+  overlay.style.display = 'flex';
+  
+  // Re-trigger CSS animations by toggling the class
+  overlay.classList.remove('animate-in');
+  void overlay.offsetWidth; // "Magic" line to reset animation
+  overlay.classList.add('animate-in');
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 2500);
 }
 
+// ==================== MAIN ANALYTICS LOADER ====================
+let currentAnalyticsFilter = 'today';
+let currentTopTab = 0; // 0 = quantity, 1 = revenue
+
+// ==================== FILTER BUTTONS ====================
+function setAnalyticsFilter(filter) {
+  currentAnalyticsFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-[#10b981]', 'text-white'));
+  document.getElementById(`filter-${filter}`).classList.add('active', 'bg-[#10b981]', 'text-white');
+  loadAnalytics();
+}
+
+function setTopSellingTab(tab) {
+  currentTopTab = tab;
+  document.querySelectorAll('.top-tab-btn').forEach(btn => btn.classList.remove('active', 'bg-[#10b981]', 'text-white'));
+  document.getElementById(`top-tab-${tab}`).classList.add('active', 'bg-[#10b981]', 'text-white');
+  loadAnalytics();
+}
+
+// ==================== MAIN ANALYTICS LOADER ====================
+async function loadAnalytics() {
+  const now = new Date();
+
+  // 1. Fetch all necessary data
+  let invoices = await db.invoices.orderBy('createdAt').reverse().toArray();
+  const allInvoiceItems = await db.invoiceItems.toArray();
+  const products = await db.products.toArray();
+  const variants = await db.productVariants.toArray();
+
+  // Create productMap (same pattern you already use)
+  const productMap = Object.fromEntries(products.map(p => [p.id, p.name]));
+
+  // Apply date filter
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  if (currentAnalyticsFilter === 'today') {
+    invoices = invoices.filter(i => new Date(i.createdAt) >= startOfDay);
+  } else if (currentAnalyticsFilter === 'week') {
+    invoices = invoices.filter(i => new Date(i.createdAt) >= startOfWeek);
+  } else if (currentAnalyticsFilter === 'month') {
+    invoices = invoices.filter(i => new Date(i.createdAt) >= startOfMonth);
+  }
+
+  const paidInvoices = invoices.filter(i => i.status === 'paid');
+
+  // 2. Key Metrics
+  const totalRevenue = paidInvoices.reduce((sum, i) => sum + (i.totalAmount || 0), 0);
+  const totalSales = paidInvoices.length;
+  const avgSale = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0;
+
+  // Total Credit Owed (manual loop as you requested)
+  let totalCredit = 0;
+  await db.creditors.toCollection().each(creditor => {
+    totalCredit += (creditor.amountOwed || 0);
+  });
+
+  document.getElementById('total-revenue').textContent = `KSh ${totalRevenue.toLocaleString()}`;
+  document.getElementById('total-sales').textContent = totalSales;
+  document.getElementById('avg-sale').textContent = `KSh ${avgSale}`;
+  document.getElementById('total-credit').textContent = `KSh ${totalCredit.toLocaleString()}`;
+
+  // 3. Top Selling Products
+  const salesByVariant = {};
+
+  allInvoiceItems.forEach(item => {
+    if (!salesByVariant[item.variantId]) {
+      salesByVariant[item.variantId] = { quantity: 0, revenue: 0 };
+    }
+    salesByVariant[item.variantId].quantity += item.quantity;
+    salesByVariant[item.variantId].revenue += item.quantity * item.priceAtSale;
+  });
+
+  let topList = Object.entries(salesByVariant).map(([variantId, data]) => {
+    const variant = variants.find(v => v.id === variantId);
+    const productName = productMap[variant?.productId] || 'Unknown Product';
+    const variantName = variant?.name || 'Unknown Variant';
+
+    return {
+      name: `${productName} — ${variantName}`,
+      quantity: data.quantity,
+      revenue: data.revenue
+    };
+  });
+
+  if (currentTopTab === 0) {
+    topList.sort((a, b) => b.quantity - a.quantity);
+  } else {
+    topList.sort((a, b) => b.revenue - a.revenue);
+  }
+
+  let topHTML = topList.slice(0, 8).map(item => `
+    <div class="bg-white rounded-3xl p-4 flex justify-between items-center">
+      <div class="font-medium">${item.name}</div>
+      <div class="text-right">
+        <div class="text-sm text-gray-500">${item.quantity} units</div>
+        <div class="font-bold text-[#10b981]">KSh ${item.revenue.toLocaleString()}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('top-selling-list').innerHTML = topHTML || '<p class="text-gray-400 text-center py-8">No sales yet</p>';
+
+  // 4. Stock Health
+  const lowStock = variants.filter(v => v.stockQuantity <= 10 && v.stockQuantity > 0);
+  const nearExpiry = variants.filter(v => {
+    if (!v.expiryDate) return false;
+    const daysLeft = Math.ceil((new Date(v.expiryDate) - now) / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 && daysLeft <= 30;
+  });
+
+  let stockHTML = '';
+
+  if (lowStock.length > 0) {
+    stockHTML += `<div class="text-red-600 text-sm mb-2">Low Stock</div>`;
+    lowStock.forEach(v => {
+      const productName = productMap[v.productId] || 'Unknown';
+      stockHTML += `<div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-3 flex justify-between"><span>${productName} — ${v.name}</span><span class="font-bold">${v.stockQuantity} left</span></div>`;
+    });
+  }
+
+  if (nearExpiry.length > 0) {
+    stockHTML += `<div class="text-orange-600 text-sm mb-2">Near Expiry</div>`;
+    nearExpiry.forEach(v => {
+      const productName = productMap[v.productId] || 'Unknown';
+      const days = Math.ceil((new Date(v.expiryDate) - now) / (1000 * 60 * 60 * 24));
+      stockHTML += `<div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-3 flex justify-between"><span>${productName} — ${v.name}</span><span class="font-bold">${days} days left</span></div>`;
+    });
+  }
+
+  document.getElementById('stock-health').innerHTML = stockHTML || '<p class="text-gray-400 text-center py-8">All stock looks healthy</p>';
+
+  // 5. Recent Invoices
+  const recent = invoices.slice(0, 8);
+  let recentHTML = recent.map(inv => `
+    <div class="bg-white rounded-3xl p-5 flex justify-between items-center">
+      <div>
+        <div class="font-semibold">#${inv.id}</div>
+        <div class="text-sm text-gray-500">${new Date(inv.createdAt).toLocaleDateString('sw-KE')}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-xl font-bold text-[#10b981]">KSh ${inv.totalAmount}</div>
+        <div class="text-xs px-3 py-1 inline-block rounded-2xl ${inv.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${inv.status}</div>
+      </div>
+      <button onclick="viewInvoice('${inv.id}')" class="ml-6 text-[#10b981]"><i class="fas fa-eye"></i></button>
+    </div>
+  `).join('');
+
+  document.getElementById('recent-invoices').innerHTML = recentHTML || '<p class="text-gray-400 text-center py-8">No recent sales</p>';
+}
 // Call this after you load the app
 // In your initApp() add: await loadInvoices();
 
     // === INIT APP ===
 async function initApp() {
   // Hide loader
-//indexedDB.deleteDatabase("DukaLoopKE");
+  //await indexedDB.deleteDatabase("DukaLoopKE");
       document.getElementById('loader').classList.add('hidden');
   //document.getElementById('app').classList.remove('hidden');
 
@@ -1389,7 +2286,7 @@ async function initApp() {
 
   await loadProducts();
   switchPage('home');
-  showShareQR();
+  //showShareQR();
 
   // Register Service Worker
   if ('serviceWorker' in navigator) {

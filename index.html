@@ -703,19 +703,19 @@ async function saveShopName() {
   const owner1=shop.owner;
   // Hide modal
   document.getElementById('shop-modal').classList.add('hidden');
-  
+  let greet= await getGreeting();
   // Update header with shop name
-  updateHeaderShopName(nameq,owner1);
+  updateHeaderShopName(nameq,owner1,greet);
   
   showSuccess(`✅ Karibu: ${owner1}\nSasa wewe ni CEO wa ${nameq}!`);
 }
 
-// UPDATE HEADER WITH SHOP NAME
-function updateHeaderShopName(name, owner) {
+// UPDATE HEADER WITH SHOP NAME,
+function updateHeaderShopName(name, owner, greet) {
   const header = document.querySelector('header h1');
   const dashboardWelcome=document.querySelector('#page-home h2');
   if (header) header.textContent = name || "DukaLoop";
-  if(dashboardWelcome) dashboardWelcome.textContent = `Karibu  CEO ${owner}`;
+  if(dashboardWelcome) dashboardWelcome.textContent = `${greet}, CEO ${owner}`;
 }
 
 // CHECK & SHOW MODAL ONLY FIRST TIME
@@ -725,8 +725,10 @@ async function checkShopName() {
     // First time → show floating modal
     document.getElementById('shop-modal').classList.remove('hidden');
   } else {
+    let greet= await getGreeting();
+    // dashboardWelcome.
     // Already set → hide modal and update header
-    updateHeaderShopName(shop.name,shop.owner);
+    updateHeaderShopName(shop.name,shop.owner,greet);
   }
 }
 
@@ -2298,6 +2300,22 @@ function showInstallPrompt() {
     </div>
   `;
   document.body.appendChild(banner);
+}
+function getGreeting() {
+  const hour = new Date().getHours(); // 0 to 23
+
+  if (hour >= 5 && hour < 12) {
+    return "Good morning";
+  } 
+  else if (hour >= 12 && hour < 17) {
+    return "Good afternoon";
+  } 
+  else if (hour >= 17 && hour < 21) {
+    return "Good evening";
+  } 
+  else {
+    return "Good night";
+  }
 }
 
 // ==================== PWA INSTALL PROMPT ====================

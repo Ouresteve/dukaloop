@@ -2382,6 +2382,7 @@ window.dismissInstallPrompt = function() {
   document.getElementById('install-banner')?.remove();
   localStorage.setItem('installPromptDismissed', 'true');
 };
+productEventMonitor();
 // Call this after you load the app
 // In your initApp() add: await loadInvoices();
 

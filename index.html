@@ -210,7 +210,7 @@
               <i class="fa fa-chart-line text-4xl mb-3"></i>
               <p class="font-semibold">Analytics</p>
             </div>
-            <div onclick="switchPage('notifications')" class="bg-[#10b981] text-white p-6 rounded-2xl cursor-pointer hover:bg-[#0f9d6e]">
+            <div onclick="switchPage('home'), showNotification('Notifications Will be available in the next update!')" class="bg-[#10b981] text-white p-6 rounded-2xl cursor-pointer hover:bg-[#0f9d6e]">
               <i class="fas fa-bell text-4xl mb-3"></i>
               <p class="font-semibold">Notifications</p>
             </div>
@@ -581,10 +581,10 @@
 
   <!-- Date Filter -->
   <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-    <button onclick="setAnalyticsFilter('today')" id="filter-today" class="filter-btn active px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">Today</button>
-    <button onclick="setAnalyticsFilter('week')" id="filter-week" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Week</button>
-    <button onclick="setAnalyticsFilter('month')" id="filter-month" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Month</button>
-    <button onclick="setAnalyticsFilter('all')" id="filter-all" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">All Time</button>
+    <button onclick="setAnalyticsFilter('today')" id="filters-today" class="filter-btn active px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">Today</button>
+    <button onclick="setAnalyticsFilter('week')" id="filters-week" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Week</button>
+    <button onclick="setAnalyticsFilter('month')" id="filters-month" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">This Month</button>
+    <button onclick="setAnalyticsFilter('all')" id="filters-all" class="filter-btn px-6 py-2 rounded-2xl text-sm font-medium whitespace-nowrap">All Time</button>
   </div>
 
   <!-- Key Metrics -->
@@ -741,6 +741,7 @@ function switchPage(page) {
         document.getElementById('analyticsBut').style.backgroundColor="";
 
       }else if(page=="invoices") {
+        setInvoiceFilter('all');
         document.getElementById('homeBut').style.backgroundColor="";
         document.getElementById('productsBut').style.backgroundColor="";
         document.getElementById('invoicesBut').style.backgroundColor="var(--primary)";
@@ -756,10 +757,15 @@ function switchPage(page) {
 
       } else if (page=="analytics") {
         loadAnalytics();
+        setAnalyticsFilter('today');
          document.getElementById('homeBut').style.backgroundColor="";
         document.getElementById('productsBut').style.backgroundColor="";
         document.getElementById('invoicesBut').style.backgroundColor="";
         document.getElementById('analyticsBut').style.backgroundColor="var(--primary)";
+
+      } else if (page=="notifications"){
+        showNotification('Notifications will be available in the next update!');
+        switchPage('home');
 
       }
     }
@@ -2114,7 +2120,7 @@ let currentTopTab = 0; // 0 = quantity, 1 = revenue
 function setAnalyticsFilter(filter) {
   currentAnalyticsFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-[#10b981]', 'text-white'));
-  document.getElementById(`filter-${filter}`).classList.add('active', 'bg-[#10b981]', 'text-white');
+  document.getElementById(`filters-${filter}`).classList.add('active', 'bg-[#10b981]', 'text-white');
   loadAnalytics();
 }
 
@@ -2214,7 +2220,8 @@ async function loadAnalytics() {
   // 4. Stock Health
   const lowStock = variants.filter(v => v.stockQuantity <= 10 && v.stockQuantity > 0);
   const nearExpiry = variants.filter(v => {
-    if (!v.expiryDate) return false;
+    if (!v.expiryDate || v.stockQuantity<=0) return false;
+    
     const daysLeft = Math.ceil((new Date(v.expiryDate) - now) / (1000 * 60 * 60 * 24));
     return daysLeft > 0 && daysLeft <= 30;
   });
@@ -2258,11 +2265,103 @@ async function loadAnalytics() {
 
   document.getElementById('recent-invoices').innerHTML = recentHTML || '<p class="text-gray-400 text-center py-8">No recent sales</p>';
 }
+// ==================== PWA INSTALL PROMPT ====================
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome from showing the default mini-infobar
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Show your custom install banner
+  showInstallPrompt();
+});
+
+function showInstallPrompt() {
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = `
+    position: fixed; bottom: 20px; left: 20px; right: 20px; 
+    background: #10b981; color: white; padding: 16px 20px; 
+    border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100000; font-size: 15px; max-width: 420px; margin: 0 auto;
+  `;
+  banner.innerHTML = `
+    <div>
+      <strong>Add DukaLoop to Home Screen</strong><br>
+      <span class="text-sm opacity-90">Install for faster access and offline use</span>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="dismissInstallPrompt()" class="px-5 py-2 text-white text-sm font-medium">Later</button>
+      <button onclick="installApp()" class="bg-white text-[#10b981] px-6 py-2 rounded-2xl font-bold">Install</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+}
+
+// ==================== PWA INSTALL PROMPT ====================
+ deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Only show prompt if user hasn't dismissed it before
+  if (!localStorage.getItem('installPromptDismissed')) {
+    showInstallPrompt();
+  }
+});
+
+function showInstallPrompt() {
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = `
+    position: fixed; bottom: 20px; left: 20px; right: 20px; 
+    background: #10b981; color: white; padding: 16px 20px; 
+    border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100000; font-size: 15px; max-width: 420px; margin: 0 auto;
+  `;
+  banner.innerHTML = `
+    <div>
+      <strong>Add DukaLoop to Home Screen</strong><br>
+      <span class="text-sm opacity-90">Install for faster access and offline use</span>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="dismissInstallPrompt()" class="px-5 py-2 text-white text-sm font-medium">Later</button>
+      <button onclick="installApp()" class="bg-white text-[#10b981] px-6 py-2 rounded-2xl font-bold">Install</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+}
+
+window.installApp = async function() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  
+  if (outcome === 'accepted') {
+    console.log('✅ User installed the app');
+  }
+  
+  deferredPrompt = null;
+  document.getElementById('install-banner')?.remove();
+};
+
+window.dismissInstallPrompt = function() {
+  document.getElementById('install-banner')?.remove();
+  localStorage.setItem('installPromptDismissed', 'true');
+};
 // Call this after you load the app
 // In your initApp() add: await loadInvoices();
 
     // === INIT APP ===
 async function initApp() {
+  // Only show install prompt if user hasn't dismissed it before
+if (!localStorage.getItem('installPromptDismissed')) {
+  // The beforeinstallprompt listener will handle it
+}
   // Hide loader
   //await indexedDB.deleteDatabase("DukaLoopKE");
       document.getElementById('loader').classList.add('hidden');

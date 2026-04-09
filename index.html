@@ -1928,11 +1928,18 @@ async function viewInvoice(id) {
     <div class="space-y-4">
   `;
 
-  items.forEach(item => {
+  for (const item of items) {
+    const product = await db.products.get(item.productId);
+    const variant = await db.productVariants.get(item.variantId);
+    const productName = product ? product.name : 'Unknown Product';
+    const variantName = variant ? variant.name : 'Unknown Variant';
+    const expiryDate = variant && variant.expiryDate ? new Date(variant.expiryDate).toLocaleDateString('sw-KE') : 'N/A';
+    
     html += `
       <div class="flex justify-between items-center border-b pb-4  grid grid-cols-2 gap-4">
         <div class="flex-1">
-          <div class="font-medium">${item.productId} — ${item.variantId}</div>
+          <div class="font-medium">${productName} — ${variantName}</div>
+          <div class="text-sm text-gray-500">Expiry: ${expiryDate}</div>
           <div class="text-sm text-gray-500">${item.quantity} × KSh ${item.priceAtSale}</div>
         </div>
         <div class="text-right">
@@ -1941,7 +1948,7 @@ async function viewInvoice(id) {
                   class="text-red-600 text-xs mt-2 hover:underline">Return this item</button>
         </div>
       </div>`;
-  });
+  }
 
   html += `</div>`;
 
@@ -1980,9 +1987,16 @@ async function startReversal(invoiceId, itemId) {
     showNotification("Item not found for reversal");
      return;
   }
+  const product = await db.products.get(item.productId);
+  const variant = await db.productVariants.get(item.variantId);
+  const productName = product ? product.name : 'Unknown Product';
+  const variantName = variant ? variant.name : 'Unknown Variant';
+  const expiryDate = variant && variant.expiryDate ? new Date(variant.expiryDate).toLocaleDateString('sw-KE') : 'N/A';
+  
   const html = `
     <div class="p-4 bg-gray-50 rounded-2xl mb-6 z-[50]">
-      <div class="font-medium">${item.productId} — ${item.variantId}</div>
+      <div class="font-medium">${productName} — ${variantName}</div>
+      <div class="text-sm text-gray-600">Expiry: ${expiryDate}</div>
       <div class="text-sm text-gray-600">${item.quantity} units × KSh ${item.priceAtSale}</div>
     </div>
     <p class="text-sm text-gray-600 mb-3">Ngapi zimerudishwa?</p>
@@ -2002,9 +2016,13 @@ async function startFullReversal(invoiceId) {
   const items = await db.invoiceItems.where('invoiceId').equals(invoiceId).toArray();
 
   let html = `<p class="text-sm mb-4 ">Reversing the entire invoice:</p>`;
-  items.forEach(item => {
-    html += `<div class="flex justify-between text-sm py-2 border-b"><span>${item.productId} — ${item.variantId}</span><span>${item.quantity} units</span></div>`;
-  });
+  for (const item of items) {
+    const product = await db.products.get(item.productId);
+    const variant = await db.productVariants.get(item.variantId);
+    const productName = product ? product.name : 'Unknown Product';
+    const variantName = variant ? variant.name : 'Unknown Variant';
+    html += `<div class="flex justify-between text-sm py-2 border-b"><span>${productName} — ${variantName}</span><span>${item.quantity} units</span></div>`;
+  }
 
   document.getElementById('reversal-items-list').innerHTML = html;
   document.getElementById('reversal-modal').classList.remove('hidden');

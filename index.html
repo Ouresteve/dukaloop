@@ -8,12 +8,12 @@
 <meta property="og:title" content="DukaLoop KE">
 <meta property="og:description" content="Simple. Secure. Reliable Shop Data Store for your Duka.">
 <meta property="og:url" content="https://dukaloop.vercel.app"> <!-- Replace with your actual URL -->
-<meta property="og:image" content="https://dukaloop.vercel.app/images/log.png"> <!-- Must be an ABSOLUTE URL -->
+<meta property="og:image" content="https://dukaloop.vercel.app/images/logo.png"> <!-- Must be an ABSOLUTE URL -->
 <meta property="og:type" content="website">
 
 <!-- Optional but recommended: Favicons -->
-<link rel="icon" type="image/png" href="images/log.png">
-<link rel="apple-touch-icon" href="images/log.png">
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
@@ -2382,7 +2382,20 @@ window.dismissInstallPrompt = function() {
   document.getElementById('install-banner')?.remove();
   localStorage.setItem('installPromptDismissed', 'true');
 };
+
 productEventMonitor();
+async function  renderSearchForProducts() { 
+const products = await db.products.toArray();
+document.getElementById("searchInput").addEventListener("input", e => {
+const value = e.target.value.toLowerCase();
+      const filtered = products.filter(p =>
+          p.name.toLowerCase().includes(value)
+      );
+      renderProducts(filtered);
+});
+
+}
+renderSearchForProducts();
 // Call this after you load the app
 // In your initApp() add: await loadInvoices();
 
@@ -2402,15 +2415,7 @@ if (!localStorage.getItem('installPromptDismissed')) {
       await checkShopName();
       await loadInvoices();
 // SEARCH
-      const products = await db.products.toArray();
-      document.getElementById("searchInput").addEventListener("input", e => {
-      const value = e.target.value.toLowerCase();
-      const filtered = products.filter(p =>
-          p.name.toLowerCase().includes(value)
-      );
-      renderProducts(filtered);
-    });
-    productEventMonitor();
+      
   
 
   await loadProducts();

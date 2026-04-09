@@ -25,6 +25,36 @@
   <style>
     /*:root { --primary: #10b981; }*/
     :root {--primary:#10b981;}
+    
+    /* Sidebar active state */
+    .sidebar-nav-btn.active {
+      background-color: rgba(78, 205, 150, 0.3);
+      border-left: 3px solid white;
+    }
+
+    /* Filter buttons */
+    .filter-btn {
+      background-color: #f3f4f6;
+      color: #6b7280;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn.active {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .top-tab-btn {
+      background-color: #f3f4f6;
+      color: #6b7280;
+      transition: all 0.2s ease;
+    }
+
+    .top-tab-btn.active {
+      background-color: var(--primary);
+      color: white;
+    }
+
     #toast-notification {
   position: fixed;
   top: 20px;
@@ -184,8 +214,47 @@
   
   <!-- MAIN APP -->
   <div id="app" class="hidden min-h-screen">
+    <!-- SIDEBAR NAVIGATION (Desktop only) -->
+    <aside class="hidden md:block md:w-64 bg-gradient-to-b from-[#10b981] to-[#0d8f63] text-white fixed left-0 top-0 h-screen z-30">
+      <!-- Sidebar Header -->
+      <div class="p-6 border-b border-green-400">
+        <div class="flex items-center gap-3 mb-2">
+          <img src="images/logo.png" alt="Logo" class="w-12 h-12 border-2 border-white rounded-full">
+          <div>
+            <h1 class="text-xl font-bold">DukaLoop</h1>
+            <p class="text-xs text-green-100">KE • Offline</p>
+          </div>
+        </div>
+        <div id="sidebar-shop-name" class="text-xs text-green-100 mt-2 truncate">Loading...</div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="flex-1 overflow-y-auto py-6 px-3">
+        <button onclick="switchPage('home')" id="sidebar-home" class="sidebar-nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-green-400/30 transition mb-2 active flex items-center gap-3">
+          <i class="fas fa-home w-5"></i> <span>Dashboard</span>
+        </button>
+        <button onclick="switchPage('products')" id="sidebar-products" class="sidebar-nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-green-400/30 transition mb-2 flex items-center gap-3">
+          <i class="fas fa-box w-5"></i> <span>Products</span>
+        </button>
+        <button onclick="switchPage('invoices')" id="sidebar-invoices" class="sidebar-nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-green-400/30 transition mb-2 flex items-center gap-3">
+          <i class="fas fa-receipt w-5"></i> <span>Sales</span>
+        </button>
+        <button onclick="switchPage('analytics')" id="sidebar-analytics" class="sidebar-nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-green-400/30 transition mb-2 flex items-center gap-3">
+          <i class="fas fa-chart-line w-5"></i> <span>Analytics</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="p-4 border-t border-green-400">
+        <div id="status-sidebar" class="flex items-center gap-2 text-xs text-green-100">
+          <i class="fas fa-wifi"></i>
+          <span>Synced locally</span>
+        </div>
+      </div>
+    </aside>
+
     <!-- TOP BAR -->
-    <header class="bg-white shadow-sm sticky top-0 z-40">
+    <header class="bg-white shadow-sm sticky top-0 z-40 md:ml-64">
       <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <div  class="flex items-center gap-3">
           <img src="images/logo.png" alt="Logo" class="w-10 h-10  border-2 border-[#10b981] rounded-full">
@@ -202,7 +271,7 @@
     </header>
 
     <!-- TABS / PAGES -->
-    <div class="max-w-7xl mx-auto px-4 py-6 pb-24">
+    <div class="max-w-7xl mx-auto px-4 py-6 pb-24 md:ml-64">
       <!-- HOME / DASHBOARD -->
       <div id="page-home" class="page">
         <div class="bg-white rounded-3xl shadow p-8 text-center">
@@ -725,8 +794,10 @@ async function saveShopName() {
 function updateHeaderShopName(name, owner, greet) {
   const header = document.querySelector('header h1');
   const dashboardWelcome=document.querySelector('#page-home h2');
+  const sidebarShopName = document.getElementById('sidebar-shop-name');
   if (header) header.textContent = name || "DukaLoop";
   if(dashboardWelcome) dashboardWelcome.textContent = `${greet}, CEO ${owner}`;
+  if(sidebarShopName) sidebarShopName.textContent = owner || "DukaLoop";
 }
 
 // CHECK & SHOW MODAL ONLY FIRST TIME
@@ -747,6 +818,11 @@ async function checkShopName() {
 function switchPage(page) {
       document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
       document.getElementById(`page-${page}`).classList.remove('hidden');
+      
+      // Update sidebar active state for desktop
+      document.querySelectorAll('.sidebar-nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`sidebar-${page}`)?.classList.add('active');
+      
       if (page=="home"){
         document.getElementById('homeBut').style.backgroundColor="var(--primary)";
         document.getElementById('productsBut').style.backgroundColor="";
@@ -2416,7 +2492,6 @@ if (!localStorage.getItem('installPromptDismissed')) {
       await loadInvoices();
 // SEARCH
       
-  
 
   await loadProducts();
   switchPage('home');
